@@ -1,6 +1,18 @@
 cmake_minimum_required(VERSION 3.15)
-include(${CMAKE_CURRENT_SOURCE_DIR}/Resources/pd.cmake/pd.cmake) # pd.build
 project(neimog)
+set(CMAKE_POLICY_VERSION_MINIMUM 3.5)
+
+set(PDCMAKE_FILE ${CMAKE_BINARY_DIR}/pd.cmake)
+if(NOT EXISTS ${PDCMAKE_FILE})
+  message(STATUS "Downloading pd.cmake")
+  file(
+    DOWNLOAD
+    https://raw.githubusercontent.com/pure-data/pd.cmake/refs/tags/v0.2.0/pd.cmake
+    ${PDCMAKE_FILE}
+    SHOW_PROGRESS
+    STATUS DOWNLOAD_STATUS)
+endif()
+include(${PDCMAKE_FILE})
 
 # ╭──────────────────────────────────────╮
 # │                FFTW3                 │
@@ -64,7 +76,7 @@ file(GLOB NEIMOG_LUA
 pd_add_external(neimog "${PD_NEIMOG}")
 pd_add_datafile(neimog "${NEIMOG_ABS}")
 pd_add_datafile(neimog "${NEIMOG_HELP}")
-pd_add_datafile(neimog "${CMAKE_CURRENT_SOURCE_DIR}/Sources/lua" )
+pd_add_datafile(neimog "${CMAKE_CURRENT_SOURCE_DIR}/Sources/lua")
 pd_add_datafile(neimog "${NEIMOG_LUA}")
 
 target_link_libraries(neimog statistics arrays manipulations mir)
