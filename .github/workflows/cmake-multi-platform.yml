@@ -31,7 +31,6 @@ jobs:
       - name: Install dependencies
         run: |
           brew install pd
-          ls -la /Applications/Pd-0.55-2.app/Contents/Resources/src
 
       - name: Configure and Build
         run: |
@@ -113,10 +112,11 @@ jobs:
             rm -rf build/*
           fi
           
+          rm ./build/pd.cmake
           cmake -B build -S . \
             -DPD_FLOATSIZE=${{ matrix.precision }} \
             -DPDLIBDIR=./
-          cmake --build build --parallel $NUMBER_OF_PROCESSORS -DPDLIBDIR=./
+          cmake --build build --parallel $NUMBER_OF_PROCESSORS 
           cmake --install build
 
       - name: Upload Artifact

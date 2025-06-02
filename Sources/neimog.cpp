@@ -49,14 +49,13 @@ extern "C" void neimog_setup(void) {
 
     // Lua Library
     t_canvas *cnv = canvas_getcurrent();
-    std::vector<std::string> requiredLibs = {"pdlua"};
-    for (auto &lib : requiredLibs) {
-        int result = sys_load_lib(cnv, lib.c_str());
-        if (!result) {
-            pd_error(nullptr, "[pd-neimog] %s not installed, some objects will not work!",
-                     lib.c_str());
-        }
-    }
+    int result = sys_load_lib(cnv, "pdlua");
+    if (!result) {
+        pd_error(nullptr, "[pd-neimog] pdlua not installed, please install it going to Help->Find "
+                          "Externals. Search for pdlua, click on install. Wait, and restart "
+                          "PureData. pd-neimog requires pdlua");
+        return;
+    };
 
     // Load Externals
     class_set_extern_dir(gensym(ExtPath.c_str()));

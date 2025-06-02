@@ -1,4 +1,5 @@
 #include <m_pd.h>
+
 #include <math.h>
 #include <string>
 #include <vector>
@@ -177,6 +178,7 @@ void euclidean_setup(void) {
                           0, A_GIMME, 0);
     class_addcreator((t_newmethod)euclidean_new, gensym("euclidean~"), A_GIMME, 0);
     CLASS_MAINSIGNALIN(Euclidean, EntropyObj, Sample);
+
     class_addmethod(Euclidean, (t_method)euclidean_dsp, gensym("dsp"), A_CANT, 0);
     class_addmethod(Euclidean, (t_method)euclidean_norm, gensym("norm"), A_FLOAT, 0);
     class_addmethod(Euclidean, (t_method)euclidean_storelist, gensym("_storelist"), A_GIMME, 0);
