@@ -1,24 +1,15 @@
-[submodule "Resources/pd.build"]
-	path = Resources/pd.build
-	url = https://github.com/charlesneimog/pd.build
-[submodule "Externals/pd-musesampler"]
-	path = Externals/pd-musesampler
-	url = https://github.com/charlesneimog/pd-musesampler
 [submodule "Externals/ambi_tilde"]
 	path = Externals/ambi_tilde
-	url = https://github.com/charlesneimog/ambi_tilde
+	url = https://github.com/charlesneimog/pd-ambi.git
 [submodule "Externals/pd-partialtrack"]
 	path = Externals/pd-partialtrack
-	url = https://github.com/charlesneimog/pd-partialtrack
-[submodule "Sources/Follower/aubio"]
-	path = Sources/Follower/aubio
-	url = https://github.com/aubio/aubio.git
-[submodule "Resources/pd.cmake"]
-	path = Resources/pd.cmake
-	url = https://github.com/pure-data/pd.cmake
+	url = https://github.com/charlesneimog/pd-partialtrack.git
 [submodule "Sources/lua/pd-upic"]
 	path = Sources/lua/pd-upic
-	url = https://github.com/charlesneimog/pd-upic
+	url = https://github.com/charlesneimog/pd-upic.git
 [submodule "Sources/lua/pd-orchidea"]
 	path = Sources/lua/pd-orchidea
-	url = https://github.com/charlesneimog/pd-orchidea
+	url = https://github.com/charlesneimog/pd-orchidea.git
+[submodule "Sources/pd-ambi"]
+	path = Sources/pd-ambi
+	url = https://github.com/charlesneimog/pd-ambi

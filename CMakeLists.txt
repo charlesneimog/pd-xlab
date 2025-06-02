@@ -7,7 +7,8 @@ if(NOT EXISTS ${PDCMAKE_FILE})
   message(STATUS "Downloading pd.cmake")
   file(
     DOWNLOAD
-    https://raw.githubusercontent.com/pure-data/pd.cmake/refs/tags/v0.2.0/pd.cmake
+    # https://raw.githubusercontent.com/pure-data/pd.cmake/refs/tags/v0.2.0/pd.cmake
+    https://raw.githubusercontent.com/pure-data/pd.cmake/refs/heads/main/pd.cmake
     ${PDCMAKE_FILE}
     SHOW_PROGRESS
     STATUS DOWNLOAD_STATUS)
@@ -36,6 +37,7 @@ add_subdirectory(${CMAKE_BINARY_DIR}/fftw-3.3.10 EXCLUDE_FROM_ALL)
 set_target_properties(fftw3 PROPERTIES LIBRARY_OUTPUT_DIRECTORY
                                        ${CMAKE_BINARY_DIR})
 set_target_properties(fftw3 PROPERTIES POSITION_INDEPENDENT_CODE ON)
+include_directories(${CMAKE_BINARY_DIR}/fftw-3.3.10/api)
 
 # ╭──────────────────────────────────────╮
 # │               Objects                │
@@ -54,7 +56,7 @@ set_target_properties(arrays PROPERTIES POSITION_INDEPENDENT_CODE ON)
 file(GLOB manipulations ${CMAKE_CURRENT_SOURCE_DIR}/Sources/manipulations/*.cpp)
 add_library(manipulations STATIC ${manipulations})
 set_target_properties(manipulations PROPERTIES POSITION_INDEPENDENT_CODE ON)
-target_link_libraries(manipulations PUBLIC fftw3f)
+target_link_libraries(manipulations PUBLIC fftw3)
 
 # mir
 file(GLOB mir_source ${CMAKE_CURRENT_SOURCE_DIR}/Sources/mir/*.cpp)
@@ -79,5 +81,6 @@ pd_add_datafile(neimog "${NEIMOG_HELP}")
 pd_add_datafile(neimog "${CMAKE_CURRENT_SOURCE_DIR}/Sources/lua")
 pd_add_datafile(neimog "${NEIMOG_LUA}")
 
-target_link_libraries(neimog statistics arrays manipulations mir)
+target_link_libraries(neimog PUBLIC statistics arrays manipulations mir)
 set_target_properties(neimog PROPERTIES CXX_STANDARD 20)
+include_directories(${PD_SOURCES_PATH})

@@ -126,7 +126,7 @@ static t_int *onsetsds_tilde_perform(t_int *w) {
                 fft_data[2 * j] = x->x_fft_in[j];
                 fft_data[2 * j + 1] = x->x_fft_imag[j];
             }
-            bool onset_detected = onsetsds_process(x->ODS, fft_data);
+            bool onset_detected = onsetsds_process(x->ODS, (float *)fft_data);
             if (onset_detected) {
                 x->onset = 1;
             }

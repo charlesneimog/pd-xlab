@@ -2,10 +2,6 @@
 name: C/C++ CI
 on:
   workflow_dispatch:
-  # push:
-  #   branches: [main]
-  # pull_request:
-  #   branches: [main]
 env:
   LIBNAME: neimog
   LIBVERSION: 0.2
@@ -21,6 +17,7 @@ jobs:
         with:
           submodules: recursive
           fetch-depth: 1
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Cache CMake build
         uses: actions/cache@v4
@@ -32,7 +29,9 @@ jobs:
             build-${{ matrix.os }}-
 
       - name: Install dependencies
-        run: brew install pd
+        run: |
+          brew install pd
+          ls -la /Applications/Pd-0.55-2.app/Contents/Resources/src
 
       - name: Configure and Build
         run: |
@@ -64,6 +63,7 @@ jobs:
         with:
           submodules: recursive
           fetch-depth: 1
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Cache build artifacts
         uses: actions/cache@v4
@@ -116,7 +116,8 @@ jobs:
           cmake -B build -S . \
             -DPD_FLOATSIZE=${{ matrix.precision }} \
             -DPDLIBDIR=./
-          cmake --build build --parallel $NUMBER_OF_PROCESSORS
+          cmake --build build --parallel $NUMBER_OF_PROCESSORS -DPDLIBDIR=./
+          cmake --install build
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
@@ -139,6 +140,7 @@ jobs:
         with:
           path: build
           key: build-cache-${{ runner.os }}-${{ matrix.precision }}
+          token: ${{ secrets.GITHUB_TOKEN }}
           restore-keys: |
             build-cache-${{ runner.os }}-
       - name: PureData Sources
@@ -185,29 +187,29 @@ jobs:
           path: build
           key: build-cache-${{ runner.os }}-${{ matrix.precision }}
 
-  # package-artifacts:
-  #   needs: [macos-build, windows-build, linux-build]
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - name: Download artifacts
-  #       uses: actions/download-artifact@v4
-  #       with:
-  #         pattern: ${{ env.LIBNAME }}-*
-  #         path: artifacts
-  #         merge-multiple: true
-  #     - name: Clear tmp files
-  #       run: rm -f artifacts/*.pdb
-  #       # ──────────────────────────────────────
-  #     - name: Install Deken
-  #       run: |
-  #         mkdir -p ${PWD}/package
-  #         docker run --rm --user $(id -u) \
-  #         --volume ${PWD}/artifacts:/${{env.LIBNAME}} \
-  #         --volume ${PWD}/package:/package \
-  #         registry.git.iem.at/pd/deken \
-  #         deken package /${{env.LIBNAME}} --output-dir /package -v ${{env.LIBVERSION}} -n ${{env.LIBNAME}}
-  #     - name: Upload Deken
-  #       uses: actions/upload-artifact@v4
-  #       with:
-  #         name: ${{ env.LIBNAME }}-${{env.LIBVERSION}}
-  #         path: ./package/
+  package-artifacts:
+    needs: [macos-build, windows-build, linux-build]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: ${{ env.LIBNAME }}-*
+          path: artifacts
+          merge-multiple: true
+      - name: Clear tmp files
+        run: rm -f artifacts/*.pdb
+        # ──────────────────────────────────────
+      - name: Install Deken
+        run: |
+          mkdir -p ${PWD}/package
+          docker run --rm --user $(id -u) \
+          --volume ${PWD}/artifacts:/${{env.LIBNAME}} \
+          --volume ${PWD}/package:/package \
+          registry.git.iem.at/pd/deken \
+          deken package /${{env.LIBNAME}} --output-dir /package -v ${{env.LIBVERSION}} -n ${{env.LIBNAME}}
+      - name: Upload Deken
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.LIBNAME }}-${{env.LIBVERSION}}
+          path: ./package/
