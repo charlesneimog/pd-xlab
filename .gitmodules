@@ -13,3 +13,6 @@
 [submodule "Sources/pd-ambi"]
 	path = Sources/pd-ambi
 	url = https://github.com/charlesneimog/pd-ambi
+[submodule "Sources/patcherize"]
+	path = Sources/patcherize
+	url = https://git.iem.at/pd/punish.git

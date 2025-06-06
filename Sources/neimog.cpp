@@ -78,6 +78,9 @@ extern "C" void neimog_setup(void) {
     nonset_tilde_setup();
     onsetsds_tilde_setup();
 
+    // plugins
+    patcherize_setup();
+
     // reset external
     class_set_extern_dir(&s_);
     post("[pd-neimog] version %d.%d.%d", 0, 0, 1);

@@ -68,7 +68,17 @@ add_library(mir STATIC ${mir_source})
 set_target_properties(mir PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
 # onsetsds
-file(GLOB ONSETSDS_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/Sources/mir/onsetsds~/*.c")
+file(GLOB ONSETSDS_SOURCES
+     "${CMAKE_CURRENT_SOURCE_DIR}/Sources/mir/onsetsds~/*.c")
+
+# ╭──────────────────────────────────────╮
+# │           External Plugins           │
+# ╰──────────────────────────────────────╯
+add_library(
+  patcherize STATIC
+  "${CMAKE_CURRENT_SOURCE_DIR}/Sources/patcherize/patcherize-plugin/patcherize.c"
+)
+set_target_properties(patcherize PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
 # ╭──────────────────────────────────────╮
 # │           Library Sources            │
@@ -77,14 +87,21 @@ list(APPEND PD_NEIMOG "${CMAKE_CURRENT_SOURCE_DIR}/Sources/neimog.cpp")
 file(GLOB NEIMOG_ABS ${CMAKE_CURRENT_SOURCE_DIR}/Abstractions/*)
 file(GLOB NEIMOG_HELP ${CMAKE_CURRENT_SOURCE_DIR}/Help-Patches/*)
 file(GLOB NEIMOG_LUA ${CMAKE_CURRENT_SOURCE_DIR}/Sources/lua/*.pd_lua)
-file(GLOB NEIMOG_LUA "${NEIMOG_LUA};${CMAKE_CURRENT_SOURCE_DIR}/Sources/lua/*.pd_lua")
+file(GLOB NEIMOG_LUA
+     "${NEIMOG_LUA};${CMAKE_CURRENT_SOURCE_DIR}/Sources/lua/*.pd_lua")
 
 pd_add_external(neimog "${PD_NEIMOG};${ONSETSDS_SOURCES}")
+
 pd_add_datafile(neimog "${NEIMOG_ABS}")
 pd_add_datafile(neimog "${NEIMOG_HELP}")
 pd_add_datafile(neimog "${CMAKE_CURRENT_SOURCE_DIR}/Sources/lua")
 pd_add_datafile(neimog "${NEIMOG_LUA}")
+pd_add_datafile(
+  neimog
+  "${CMAKE_CURRENT_SOURCE_DIR}/Sources/patcherize/patcherize-plugin/patcherize-plugin.tcl"
+)
 
-target_link_libraries(neimog PUBLIC statistics arrays manipulations mir)
+target_link_libraries(neimog PUBLIC patcherize statistics arrays manipulations
+                                    mir)
 set_target_properties(neimog PROPERTIES CXX_STANDARD 20)
 include_directories(${PD_SOURCES_PATH})

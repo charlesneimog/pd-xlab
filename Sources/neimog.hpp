@@ -43,6 +43,11 @@ void nonset_tilde_setup(void);
 extern "C" void onsetsds_tilde_setup(void);
 
 // ╭─────────────────────────────────────╮
+// │               PLUGINS               │
+// ╰─────────────────────────────────────╯
+extern "C" void patcherize_setup(void);
+
+// ╭─────────────────────────────────────╮
 // │           Library Objects           │
 // ╰─────────────────────────────────────╯
 
