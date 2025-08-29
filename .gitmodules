@@ -16,3 +16,6 @@
 [submodule "Sources/patcherize"]
 	path = Sources/patcherize
 	url = https://git.iem.at/pd/punish.git
+[submodule "Sources/pd-saf"]
+	path = Sources/pd-saf
+	url = git@github.com:charlesneimog/pd-saf.git

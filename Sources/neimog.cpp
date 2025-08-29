@@ -57,6 +57,14 @@ extern "C" void neimog_setup(void) {
         return;
     };
 
+    result = sys_load_lib(cnv, "saf");
+    if (!result) {
+        pd_error(nullptr, "[pd-neimog] pd-saf not installed, please install it going to Help->Find "
+                          "Externals. Search for pd-saf, click on install. Wait, and restart "
+                          "PureData. pd-neimog requires pd-saf");
+        return;
+    };
+
     // Load Externals
     class_set_extern_dir(gensym(ExtPath.c_str()));
     // arrays
@@ -80,6 +88,8 @@ extern "C" void neimog_setup(void) {
 
     // plugins
     patcherize_setup();
+
+
 
     // reset external
     class_set_extern_dir(&s_);
