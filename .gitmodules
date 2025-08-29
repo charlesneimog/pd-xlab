@@ -19,3 +19,6 @@
 [submodule "Sources/pd-saf"]
 	path = Sources/pd-saf
 	url = git@github.com:charlesneimog/pd-saf.git
+[submodule "Sources/py4pd"]
+	path = Sources/py4pd
+	url = https://github.com/charlesneimog/py4pd

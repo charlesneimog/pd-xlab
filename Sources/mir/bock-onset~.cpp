@@ -14,11 +14,11 @@ typedef struct _bock_tilde {
     t_object x_obj;
     t_sample x_f;
 
-    // FFTW3 Resources
-    fftw_plan fft_plan;
+    // fftwf3 Resources
+    fftwf_plan fft_plan;
     float *fft_buffer;
     float *window;
-    fftw_complex *fft_out;
+    fftwf_complex *fft_out;
 
     // Phase and Magnitude History
     float *prev_mag;
@@ -53,7 +53,7 @@ static t_int *bock_tilde_perform(t_int *w) {
         x->fft_buffer[x->buffer_pointer++] = in[i] * x->window[x->buffer_pointer];
 
         if (x->buffer_pointer == FFT_SIZE) {
-            fftw_execute(x->fft_plan);
+            fftwf_execute(x->fft_plan);
             float eta = 0.0f;
 
             // Process each bin
@@ -104,9 +104,9 @@ static void *bock_tilde_new(t_floatarg threshold) {
     t_bock_tilde *x = (t_bock_tilde *)pd_new(bock_tilde_class);
 
     // Initialize FFT buffers
-    x->fft_buffer = (float *)fftw_malloc(FFT_SIZE * sizeof(float));
-    x->fft_out = (fftw_complex *)fftw_malloc(sizeof(fftw_complex) * (FFT_SIZE / 2 + 1));
-    x->fft_plan = fftw_plan_dft_r2c_1d(FFT_SIZE, (double*)x->fft_buffer, x->fft_out, FFTW_MEASURE);
+    x->fft_buffer = (float *)fftwf_malloc(FFT_SIZE * sizeof(float));
+    x->fft_out = (fftwf_complex *)fftwf_malloc(sizeof(fftwf_complex) * (FFT_SIZE / 2 + 1));
+    x->fft_plan = fftwf_plan_dft_r2c_1d(FFT_SIZE, (float*)x->fft_buffer, x->fft_out, FFTW_MEASURE);
 
     // Create Hann window
     x->window = (float *)malloc(FFT_SIZE * sizeof(float));
@@ -132,9 +132,9 @@ static void *bock_tilde_new(t_floatarg threshold) {
 // ─────────────────────────────────────
 // Destructor
 static void bock_tilde_free(t_bock_tilde *x) {
-    fftw_destroy_plan(x->fft_plan);
-    fftw_free(x->fft_buffer);
-    fftw_free(x->fft_out);
+    fftwf_destroy_plan(x->fft_plan);
+    fftwf_free(x->fft_buffer);
+    fftwf_free(x->fft_out);
     free(x->window);
     free(x->prev_mag);
     free(x->prev_phase1);

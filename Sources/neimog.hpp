@@ -36,6 +36,16 @@ void entropy_setup(void);
 void kalman_setup(void);
 
 // ╭─────────────────────────────────────╮
+// │                 SAF                 │
+// ╰─────────────────────────────────────╯
+extern "C" void setup_saf0x2eencoder_tilde(void);
+extern "C" void setup_saf0x2edecoder_tilde(void);
+extern "C" void setup_saf0x2ebinaural_tilde(void);
+extern "C" void setup_saf0x2eroomsim_tilde(void);
+extern "C" void setup_saf0x2epitchshifter_tilde(void);
+extern "C" void setup_saf0x2ebinauraliser_tilde(void);
+
+// ╭─────────────────────────────────────╮
 // │                 MIR                 │
 // ╰─────────────────────────────────────╯
 void bock_tilde_setup(void);

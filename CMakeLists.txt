@@ -1,47 +1,71 @@
 cmake_minimum_required(VERSION 3.15)
 project(neimog)
+
 set(CMAKE_POLICY_VERSION_MINIMUM 3.5)
 set(PD_BUILD_STATIC_OBJECTS ON)
+set(POSITION_INDEPENDENT_CODE ON)
 
 set(PDCMAKE_FILE ${CMAKE_BINARY_DIR}/pd.cmake)
 if(NOT EXISTS ${PDCMAKE_FILE})
-    message(STATUS "Downloading pd.cmake")
-    file(
-        DOWNLOAD
-        https://raw.githubusercontent.com/pure-data/pd.cmake/refs/tags/v0.2.1/pd.cmake
-        ${PDCMAKE_FILE}
-        SHOW_PROGRESS
-        STATUS DOWNLOAD_STATUS)
+  message(STATUS "Downloading pd.cmake")
+  file(
+    DOWNLOAD
+    https://raw.githubusercontent.com/pure-data/pd.cmake/refs/tags/v0.2.1/pd.cmake
+    ${PDCMAKE_FILE}
+    SHOW_PROGRESS
+    STATUS DOWNLOAD_STATUS)
 endif()
 include(${PDCMAKE_FILE})
 
 # ╭──────────────────────────────────────╮
 # │                FFTW3                 │
 # ╰──────────────────────────────────────╯
-cmake_policy(SET CMP0135 NEW)
-option(BUILD_SHARED_LIBS OFF)
-option(BUILD_TESTS OFF)
+set(BUILD_SHARED_LIBS
+    OFF
+    CACHE BOOL "" FORCE)
+set(BUILD_TESTS
+    OFF
+    CACHE BOOL "" FORCE)
+set(ENABLE_FLOAT
+    ON
+    CACHE BOOL "Build single-precision (fftw3f)" FORCE)
+set(ENABLE_LONG_DOUBLE
+    OFF
+    CACHE BOOL "" FORCE)
+set(ENABLE_QUAD_PRECISION
+    OFF
+    CACHE BOOL "" FORCE)
+set(DISABLE_FORTRAN
+    ON
+    CACHE BOOL "" FORCE)
+
 set(FFTW3_FILE ${CMAKE_BINARY_DIR}/fftw-3.3.10.tar.gz)
 if(NOT EXISTS ${FFTW3_FILE})
-    message(STATUS "Downloading FFTW3")
-    file(
-        DOWNLOAD https://www.fftw.org/fftw-3.3.10.tar.gz ${FFTW3_FILE}
-        SHOW_PROGRESS
-        STATUS DOWNLOAD_STATUS)
+  message(STATUS "Downloading FFTW3")
+  file(
+    DOWNLOAD https://www.fftw.org/fftw-3.3.10.tar.gz ${FFTW3_FILE}
+    SHOW_PROGRESS
+    STATUS DOWNLOAD_STATUS)
 endif()
 
-file(ARCHIVE_EXTRACT INPUT ${CMAKE_BINARY_DIR}/fftw-3.3.10.tar.gz DESTINATION ${CMAKE_BINARY_DIR}/)
-
+file(ARCHIVE_EXTRACT INPUT ${CMAKE_BINARY_DIR}/fftw-3.3.10.tar.gz DESTINATION
+     ${CMAKE_BINARY_DIR}/)
 add_subdirectory(${CMAKE_BINARY_DIR}/fftw-3.3.10 EXCLUDE_FROM_ALL)
-set_target_properties(fftw3 PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
-set_target_properties(fftw3 PROPERTIES POSITION_INDEPENDENT_CODE ON)
+get_property(
+  all_targets
+  DIRECTORY ${CMAKE_BINARY_DIR}/fftw-3.3.10
+  PROPERTY BUILDSYSTEM_TARGETS)
+
+set_target_properties(fftw3f PROPERTIES LIBRARY_OUTPUT_DIRECTORY
+                                        ${CMAKE_BINARY_DIR})
+set_target_properties(fftw3f PROPERTIES POSITION_INDEPENDENT_CODE ON)
 include_directories(${CMAKE_BINARY_DIR}/fftw-3.3.10/api)
 
 # ╭──────────────────────────────────────╮
 # │               Objects                │
 # ╰──────────────────────────────────────╯
 if(PD_FLOATSIZE STREQUAL 64)
-    add_compile_definitions(PD_FLOATSIZE=64)
+  add_compile_definitions(PD_FLOATSIZE=64)
 endif()
 
 # divergence
@@ -58,7 +82,7 @@ set_target_properties(arrays PROPERTIES POSITION_INDEPENDENT_CODE ON)
 file(GLOB manipulations ${CMAKE_CURRENT_SOURCE_DIR}/Sources/manipulations/*.cpp)
 add_library(manipulations STATIC ${manipulations})
 set_target_properties(manipulations PROPERTIES POSITION_INDEPENDENT_CODE ON)
-target_link_libraries(manipulations PUBLIC fftw3)
+target_link_libraries(manipulations PUBLIC fftw3f)
 
 # mir
 file(GLOB mir_source ${CMAKE_CURRENT_SOURCE_DIR}/Sources/mir/*.cpp)
@@ -66,14 +90,22 @@ add_library(mir STATIC ${mir_source})
 set_target_properties(mir PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
 # onsetsds
-file(GLOB ONSETSDS_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/Sources/mir/onsetsds~/*.c")
+file(GLOB ONSETSDS_SOURCES
+     "${CMAKE_CURRENT_SOURCE_DIR}/Sources/mir/onsetsds~/*.c")
 
 # ╭──────────────────────────────────────╮
 # │           External Plugins           │
 # ╰──────────────────────────────────────╯
-add_library(patcherize STATIC
-            "${CMAKE_CURRENT_SOURCE_DIR}/Sources/patcherize/patcherize-plugin/patcherize.c")
+add_library(
+  patcherize STATIC
+  "${CMAKE_CURRENT_SOURCE_DIR}/Sources/patcherize/patcherize-plugin/patcherize.c"
+)
 set_target_properties(patcherize PROPERTIES POSITION_INDEPENDENT_CODE ON)
+
+# ╭──────────────────────────────────────╮
+# │             PureData Saf             │
+# ╰──────────────────────────────────────╯
+add_subdirectory(Sources/pd-saf)
 
 # ╭──────────────────────────────────────╮
 # │           Library Sources            │
@@ -83,7 +115,8 @@ list(APPEND PD_NEIMOG "${CMAKE_CURRENT_SOURCE_DIR}/Sources/neimog.cpp")
 file(GLOB NEIMOG_ABS ${CMAKE_CURRENT_SOURCE_DIR}/Abstractions/*)
 file(GLOB NEIMOG_HELP ${CMAKE_CURRENT_SOURCE_DIR}/Help-Patches/*)
 file(GLOB NEIMOG_LUA ${CMAKE_CURRENT_SOURCE_DIR}/Sources/lua/*.pd_lua)
-file(GLOB NEIMOG_LUA "${NEIMOG_LUA};${CMAKE_CURRENT_SOURCE_DIR}/Sources/lua/*.pd_lua")
+file(GLOB NEIMOG_LUA
+     "${NEIMOG_LUA};${CMAKE_CURRENT_SOURCE_DIR}/Sources/lua/*.pd_lua")
 
 pd_add_external(neimog "${PD_NEIMOG};${ONSETSDS_SOURCES}")
 
@@ -92,15 +125,33 @@ pd_add_datafile(neimog "${NEIMOG_HELP}")
 pd_add_datafile(neimog "${CMAKE_CURRENT_SOURCE_DIR}/Sources/lua")
 pd_add_datafile(neimog "${NEIMOG_LUA}")
 pd_add_datafile(
-    neimog "${CMAKE_CURRENT_SOURCE_DIR}/Sources/patcherize/patcherize-plugin/patcherize-plugin.tcl")
+  neimog
+  "${CMAKE_CURRENT_SOURCE_DIR}/Sources/patcherize/patcherize-plugin/patcherize-plugin.tcl"
+)
+
+set_target_properties(saf.encoder_tilde PROPERTIES POSITION_INDEPENDENT_CODE ON)
+set_target_properties(saf.decoder_tilde PROPERTIES POSITION_INDEPENDENT_CODE ON)
+set_target_properties(saf.binaural_tilde PROPERTIES POSITION_INDEPENDENT_CODE
+                                                    ON)
+set_target_properties(saf.roomsim_tilde PROPERTIES POSITION_INDEPENDENT_CODE ON)
+set_target_properties(saf.pitchshifter_tilde
+                      PROPERTIES POSITION_INDEPENDENT_CODE ON)
+set_target_properties(saf.binauraliser_tilde
+                      PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
 target_link_libraries(
-    neimog
-    PUBLIC patcherize
-           statistics
-           arrays
-           manipulations
-           mir)
+  neimog
+  PUBLIC patcherize
+         statistics
+         arrays
+         manipulations
+         mir
+         saf.encoder_tilde
+         saf.decoder_tilde
+         saf.binaural_tilde
+         saf.roomsim_tilde
+         saf.pitchshifter_tilde
+         saf.binauraliser_tilde)
 
 set_target_properties(neimog PROPERTIES CXX_STANDARD 20)
 include_directories(${PD_SOURCES_PATH})
