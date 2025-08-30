@@ -1,5 +1,4 @@
 #include "neimog.hpp"
-#include <vector>
 
 extern "C" {
 #include <s_stuff.h>
@@ -31,6 +30,7 @@ extern "C" void neimog_setup(void) {
     std::string sf = libPath + "/sf/";
     std::string vst = libPath + "/sf/";
     std::string lua = libPath + "/lua/";
+    std::string py = libPath + "/python/";
 
     STUFF->st_searchpath = namelist_append(STUFF->st_searchpath, sf.c_str(), 0);
     STUFF->st_searchpath = namelist_append(STUFF->st_searchpath, vst.c_str(), 0);
@@ -56,6 +56,12 @@ extern "C" void neimog_setup(void) {
                           "PureData. pd-neimog requires pdlua");
         return;
     };
+
+    result = sys_load_lib(cnv, "py4pd");
+    if (!result) {
+        pd_error(nullptr, "[pd-neimog] py4pd was not load, some objects will not work");
+        return;
+    }
 
     // Load Externals
     class_set_extern_dir(gensym(ExtPath.c_str()));
@@ -88,6 +94,9 @@ extern "C" void neimog_setup(void) {
     setup_saf0x2eroomsim_tilde();
     setup_saf0x2epitchshifter_tilde();
     setup_saf0x2ebinauraliser_tilde();
+
+    // utils
+    infinite0x2erecord_tilde_setup();
 
     // reset external
     class_set_extern_dir(&s_);

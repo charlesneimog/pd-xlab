@@ -58,6 +58,11 @@ extern "C" void onsetsds_tilde_setup(void);
 extern "C" void patcherize_setup(void);
 
 // ╭─────────────────────────────────────╮
+// │                UTILS                │
+// ╰─────────────────────────────────────╯
+void infinite0x2erecord_tilde_setup(void);
+
+// ╭─────────────────────────────────────╮
 // │           Library Objects           │
 // ╰─────────────────────────────────────╯
 
