@@ -24,6 +24,7 @@ if(NOT EXISTS ${PDCMAKE_FILE})
     STATUS DOWNLOAD_STATUS)
 endif()
 include(${PDCMAKE_FILE})
+include_directories(${PD_SOURCES_PATH})
 
 # ╭──────────────────────────────────────╮
 # │                FFTW3                 │
@@ -122,7 +123,7 @@ set(PD_BUILD_STATIC_OBJECTS OFF)
 
 add_subdirectory(Sources/pd-saf)
 
-set(PYVERSION "3.13")
+set(PYVERSION "3.12")
 add_subdirectory(Sources/py4pd)
 
 set(PD_BUILD_STATIC_OBJECTS ON)
