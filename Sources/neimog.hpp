@@ -1,8 +1,5 @@
 #include <m_pd.h>
-
 #include <m_imp.h>
-
-#include <string>
 
 // ╭─────────────────────────────────────╮
 // │            Array Objects            │
@@ -34,16 +31,6 @@ void renyi_setup(void);
 void euclidean_setup(void);
 void entropy_setup(void);
 void kalman_setup(void);
-
-// ╭─────────────────────────────────────╮
-// │                 SAF                 │
-// ╰─────────────────────────────────────╯
-extern "C" void setup_saf0x2eencoder_tilde(void);
-extern "C" void setup_saf0x2edecoder_tilde(void);
-extern "C" void setup_saf0x2ebinaural_tilde(void);
-extern "C" void setup_saf0x2eroomsim_tilde(void);
-extern "C" void setup_saf0x2epitchshifter_tilde(void);
-extern "C" void setup_saf0x2ebinauraliser_tilde(void);
 
 // ╭─────────────────────────────────────╮
 // │                 MIR                 │

@@ -1,6 +1,7 @@
 #include "neimog.hpp"
+#include <string>
 
-extern "C" {
+extern "C"{
 #include <s_stuff.h>
 }
 
@@ -54,17 +55,21 @@ extern "C" void neimog_setup(void) {
         pd_error(nullptr, "[pd-neimog] pdlua not installed, please install it going to Help->Find "
                           "Externals. Search for pdlua, click on install. Wait, and restart "
                           "PureData. pd-neimog requires pdlua");
-        return;
     };
 
     result = sys_load_lib(cnv, "py4pd");
     if (!result) {
         pd_error(nullptr, "[pd-neimog] py4pd was not load, some objects will not work");
-        return;
+    }
+
+    result = sys_load_lib(cnv, "saf");
+    if (!result) {
+        pd_error(nullptr, "[pd-neimog] saf was not load, some objects will not work");
     }
 
     // Load Externals
     class_set_extern_dir(gensym(ExtPath.c_str()));
+
     // arrays
     arrayrotate_setup();
     arraysum_setup();
@@ -76,6 +81,7 @@ extern "C" void neimog_setup(void) {
     euclidean_setup();
     entropy_setup();
     kalman_setup();
+
     // manipulations
     transposer_tilde_setup();
 
@@ -87,18 +93,10 @@ extern "C" void neimog_setup(void) {
     // plugins
     patcherize_setup();
 
-    // pd-saf
-    setup_saf0x2eencoder_tilde();
-    setup_saf0x2edecoder_tilde();
-    setup_saf0x2ebinaural_tilde();
-    setup_saf0x2eroomsim_tilde();
-    setup_saf0x2epitchshifter_tilde();
-    setup_saf0x2ebinauraliser_tilde();
-
     // utils
     infinite0x2erecord_tilde_setup();
 
     // reset external
     class_set_extern_dir(&s_);
-    post("[pd-neimog] version %d.%d.%d", 0, 0, 1);
+    post("[pd-neimog] version %d.%d.%d", 0, 1, 0);
 }

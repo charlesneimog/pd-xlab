@@ -116,16 +116,15 @@ add_library(
 set_target_properties(patcherize PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
 # ╭──────────────────────────────────────╮
-# │             PureData Saf             │
-# ╰──────────────────────────────────────╯
-add_subdirectory(Sources/pd-saf)
-
-# ╭──────────────────────────────────────╮
-# │                py4pd                 │
+# │              PY4PD, SAF              │
 # ╰──────────────────────────────────────╯
 set(PD_BUILD_STATIC_OBJECTS OFF)
+
+add_subdirectory(Sources/pd-saf)
+
 set(PYVERSION "3.13")
 add_subdirectory(Sources/py4pd)
+
 set(PD_BUILD_STATIC_OBJECTS ON)
 
 # ╭──────────────────────────────────────╮
@@ -157,23 +156,7 @@ target_link_libraries(
          arrays
          manipulations
          mir
-         utilities
-         saf.encoder_tilde
-         saf.decoder_tilde
-         saf.binaural_tilde
-         saf.roomsim_tilde
-         saf.pitchshifter_tilde
-         saf.binauraliser_tilde)
-
-set_target_properties(saf.encoder_tilde PROPERTIES POSITION_INDEPENDENT_CODE ON)
-set_target_properties(saf.decoder_tilde PROPERTIES POSITION_INDEPENDENT_CODE ON)
-set_target_properties(saf.binaural_tilde PROPERTIES POSITION_INDEPENDENT_CODE
-                                                    ON)
-set_target_properties(saf.roomsim_tilde PROPERTIES POSITION_INDEPENDENT_CODE ON)
-set_target_properties(saf.pitchshifter_tilde
-                      PROPERTIES POSITION_INDEPENDENT_CODE ON)
-set_target_properties(saf.binauraliser_tilde
-                      PROPERTIES POSITION_INDEPENDENT_CODE ON)
+         utilities)
 
 add_dependencies(neimog py4pd)
 set_target_properties(neimog PROPERTIES CXX_STANDARD 20)
