@@ -123,7 +123,7 @@ set(PD_BUILD_STATIC_OBJECTS OFF)
 
 add_subdirectory(Sources/pd-saf)
 
-set(PYVERSION "3.12")
+set(PYVERSION "3.13")
 add_subdirectory(Sources/py4pd)
 
 set(PD_BUILD_STATIC_OBJECTS ON)
