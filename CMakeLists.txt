@@ -103,7 +103,11 @@ file(GLOB ONSETSDS_SOURCES
      "${CMAKE_CURRENT_SOURCE_DIR}/Sources/mir/onsetsds~/*.c")
 
 # utilities
-file(GLOB utilities_src ${CMAKE_CURRENT_SOURCE_DIR}/Sources/utilities/*.cpp)
+list(APPEND utilities_src
+     ${CMAKE_CURRENT_SOURCE_DIR}/Sources/utilities/infinite.record.cpp)
+list(APPEND utilities_src
+     ${CMAKE_CURRENT_SOURCE_DIR}/Sources/utilities/switch.control~.cpp)
+
 add_library(utilities STATIC ${utilities_src})
 set_target_properties(utilities PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
@@ -125,6 +129,15 @@ add_subdirectory(Sources/pd-saf)
 
 set(PYVERSION "3.13")
 add_subdirectory(Sources/py4pd)
+
+pd_add_external(
+  convolve~ ${CMAKE_CURRENT_SOURCE_DIR}/Sources/convolve_tilde/src/convolve~.c)
+target_link_libraries(convolve_tilde PUBLIC fftw3f)
+pd_add_datafile(
+  convolver~
+  ${CMAKE_CURRENT_SOURCE_DIR}/Sources/convolve_tilde/convolve~-help.pd)
+pd_add_datafile(convolver~
+                ${CMAKE_CURRENT_SOURCE_DIR}/Sources/convolve_tilde/audio)
 
 set(PD_BUILD_STATIC_OBJECTS ON)
 
@@ -150,14 +163,8 @@ pd_add_datafile(
   "${CMAKE_CURRENT_SOURCE_DIR}/Sources/patcherize/patcherize-plugin/patcherize-plugin.tcl"
 )
 
-target_link_libraries(
-  neimog
-  PUBLIC patcherize
-         statistics
-         arrays
-         manipulations
-         mir
-         utilities)
+target_link_libraries(neimog PUBLIC patcherize statistics arrays manipulations
+                                    mir utilities)
 
 add_dependencies(neimog py4pd)
 set_target_properties(neimog PROPERTIES CXX_STANDARD 20)

@@ -22,3 +22,6 @@
 [submodule "Sources/patcherize"]
 	path = Sources/patcherize
 	url = https://github.com/charlesneimog/punish
+[submodule "Sources/convolve_tilde"]
+	path = Sources/convolve_tilde
+	url = https://github.com/wbrent/convolve_tilde
