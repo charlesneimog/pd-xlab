@@ -4,6 +4,7 @@ project(neimog)
 set(CMAKE_POLICY_VERSION_MINIMUM 3.5)
 set(PD_BUILD_STATIC_OBJECTS ON)
 set(POSITION_INDEPENDENT_CODE ON)
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
   set(CMAKE_EXE_LINKER_FLAGS
@@ -18,7 +19,7 @@ if(NOT EXISTS ${PDCMAKE_FILE})
   message(STATUS "Downloading pd.cmake")
   file(
     DOWNLOAD
-    https://raw.githubusercontent.com/pure-data/pd.cmake/refs/tags/v0.2.4/pd.cmake
+    https://raw.githubusercontent.com/pure-data/pd.cmake/refs/tags/v0.2.5/pd.cmake
     ${PDCMAKE_FILE}
     SHOW_PROGRESS
     STATUS DOWNLOAD_STATUS)
@@ -125,11 +126,12 @@ set_target_properties(patcherize PROPERTIES POSITION_INDEPENDENT_CODE ON)
 # ╰──────────────────────────────────────╯
 set(PD_BUILD_STATIC_OBJECTS OFF)
 
-add_subdirectory(Sources/pd-saf)
+# add_subdirectory(Sources/pd-saf)
 
 set(PYVERSION "3.13")
 add_subdirectory(Sources/py4pd)
 
+# │              convolve~               │
 pd_add_external(
   convolve~ ${CMAKE_CURRENT_SOURCE_DIR}/Sources/convolve_tilde/src/convolve~.c)
 target_link_libraries(convolve_tilde PUBLIC fftw3f)
@@ -139,7 +141,55 @@ pd_add_datafile(
 pd_add_datafile(convolver~
                 ${CMAKE_CURRENT_SOURCE_DIR}/Sources/convolve_tilde/audio)
 
-set(PD_BUILD_STATIC_OBJECTS ON)
+# │                Reverb                │
+list(
+  APPEND
+  multiconvolve_src
+  ${CMAKE_CURRENT_SOURCE_DIR}/Sources/piro/multiconvolve~.c
+  ${CMAKE_CURRENT_SOURCE_DIR}/Sources/piro/lib/u_partition_convolve.c
+  ${CMAKE_CURRENT_SOURCE_DIR}/Sources/piro/lib/u_time_domain_convolve.c
+  ${CMAKE_CURRENT_SOURCE_DIR}/Sources/piro/lib/u_zero_latency_convolve.c
+  ${CMAKE_CURRENT_SOURCE_DIR}/Sources/piro/lib/u_output_channel_convolve.c
+  ${CMAKE_CURRENT_SOURCE_DIR}/Sources/piro/lib/u_multi_channel_convolve.c
+  ${CMAKE_CURRENT_SOURCE_DIR}/Sources/piro/lib/m_memory.c
+  ${CMAKE_CURRENT_SOURCE_DIR}/Sources/piro/lib/z_array.c
+  ${CMAKE_CURRENT_SOURCE_DIR}/Sources/piro/lib/z_fft.c)
+pd_add_external(multiconvolve~ "${multiconvolve_src}")
+pd_add_datafile(
+  multiconvolve~
+  "${CMAKE_CURRENT_SOURCE_DIR}/Sources/piro/multiconvolve~-help.pd")
+target_compile_definitions(multiconvolve_tilde PRIVATE UNIX)
+
+# ─────────────────────────────────────
+find_package(PkgConfig REQUIRED)
+pkg_check_modules(PIPEWIRE REQUIRED libpipewire-0.3)
+
+pd_add_external(pwout~ "${CMAKE_CURRENT_SOURCE_DIR}/Sources/utilities/pwout~.c")
+target_link_libraries(pwout_tilde PUBLIC ${PIPEWIRE_LIBRARIES})
+target_include_directories(pwout_tilde PUBLIC ${PIPEWIRE_INCLUDE_DIRS})
+
+pd_add_external(pwin~ "${CMAKE_CURRENT_SOURCE_DIR}/Sources/utilities/pwin~.c")
+target_link_libraries(pwin_tilde PUBLIC ${PIPEWIRE_LIBRARIES})
+target_include_directories(pwin_tilde PUBLIC ${PIPEWIRE_INCLUDE_DIRS})
+
+# ╭──────────────────────────────────────╮
+# │             VST PLUGINS              │
+# ╰──────────────────────────────────────╯
+
+set(PD ON)
+set(SC OFF)
+set(TESTSUITE OFF)
+set(VST2 OFF)
+set(BRIDGE OFF)
+set(VST3DIR
+    "./Sources/vst3/Fire/JUCE/modules/juce_audio_processors/format_types/VST3_SDK/"
+)
+include_directories("${VST3DIR}")
+add_subdirectory(Sources/vstplugin~/ EXCLUDE_FROM_ALL)
+
+# vsts
+add_subdirectory(Sources/vst3/Fire EXCLUDE_FROM_ALL)
+include(Resources/cmake/dragonfly.cmake)
 
 # ╭──────────────────────────────────────╮
 # │           Library Sources            │
@@ -165,6 +215,57 @@ pd_add_datafile(
 
 target_link_libraries(neimog PUBLIC patcherize statistics arrays manipulations
                                     mir utilities)
+set_target_properties(neimog PROPERTIES CXX_STANDARD 20)
+
+# List of external dependencies
+set(ADICIONAL_EXTERNALS py4pd Fire pwout_tilde pwin_tilde)
+
+# Add dependencies for target 'neimog'
+foreach(ext IN LISTS ADICIONAL_EXTERNALS)
+  add_dependencies(neimog ${ext})
+endforeach()
 
 add_dependencies(neimog py4pd)
-set_target_properties(neimog PROPERTIES CXX_STANDARD 20)
+add_dependencies(neimog Fire_VST3)
+add_dependencies(neimog pwout_tilde)
+add_dependencies(neimog pwin_tilde)
+
+# Install vst3
+if(CMAKE_SIZEOF_VOID_P EQUAL 8)
+  set(ARCHITECTURE "x86_64")
+else()
+  set(ARCHITECTURE "x86")
+endif()
+
+# Detect platform
+if(UNIX AND NOT APPLE)
+  set(PLATFORM "linux")
+elseif(APPLE)
+  set(PLATFORM "mac")
+elseif(WIN32)
+  set(PLATFORM "win")
+endif()
+
+install(
+  TARGETS Fire_VST3
+  LIBRARY
+    DESTINATION
+      "${PDLIBDIR}/${PROJECT_NAME}/vst3/Fire.vst3/Contents/${ARCHITECTURE}-${PLATFORM}"
+)
+
+install(
+  TARGETS dragonfly-early-reflections-vst3
+  LIBRARY
+    DESTINATION
+      "${PDLIBDIR}/${PROJECT_NAME}/vst3/dragonfly-early-reflections.vst3/Contents/${ARCHITECTURE}-${PLATFORM}"
+)
+
+install(
+  TARGETS dragonfly-room-reverb-vst3
+  LIBRARY
+    DESTINATION
+      "${PDLIBDIR}/${PROJECT_NAME}/vst3/dragonfly-room-reverb.vst3/Contents/${ARCHITECTURE}-${PLATFORM}"
+)
+
+install(TARGETS vstplugin_tilde
+        LIBRARY DESTINATION "${PDLIBDIR}/${PROJECT_NAME}/")

@@ -25,3 +25,15 @@
 [submodule "Sources/convolve_tilde"]
 	path = Sources/convolve_tilde
 	url = https://github.com/wbrent/convolve_tilde
+[submodule "Sources/piro"]
+	path = Sources/piro
+	url = https://github.com/d-i-s/piro.git
+[submodule "Sources/vst3/Fire"]
+	path = Sources/vst3/Fire
+	url = https://github.com/jerryuhoo/Fire
+[submodule "Sources/vst3/dragonfly"]
+	path = Sources/vst3/dragonfly
+	url = https://github.com/michaelwillis/dragonfly-reverb
+[submodule "Sources/vstplugin~"]
+	path = Sources/vstplugin~
+	url = https://git.iem.at/pd/vstplugin.git

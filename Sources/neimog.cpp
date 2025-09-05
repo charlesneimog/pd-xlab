@@ -1,7 +1,7 @@
 #include "neimog.hpp"
 #include <string>
 
-extern "C"{
+extern "C" {
 #include <s_stuff.h>
 }
 
@@ -29,12 +29,14 @@ extern "C" void neimog_setup(void) {
     std::string AbsPath = libPath + "/Abstractions/";
     std::string AudiosPath = libPath + "/Resources/Audios/";
     std::string sf = libPath + "/sf/";
-    std::string vst = libPath + "/sf/";
+    std::string vst = libPath + "/vst/";
+    std::string vst3 = libPath + "/vst3/";
     std::string lua = libPath + "/lua/";
     std::string py = libPath + "/python/";
 
     STUFF->st_searchpath = namelist_append(STUFF->st_searchpath, sf.c_str(), 0);
     STUFF->st_searchpath = namelist_append(STUFF->st_searchpath, vst.c_str(), 0);
+    STUFF->st_searchpath = namelist_append(STUFF->st_searchpath, vst3.c_str(), 0);
     STUFF->st_searchpath = namelist_append(STUFF->st_searchpath, libPath.c_str(), 0);
     STUFF->st_searchpath = namelist_append(STUFF->st_searchpath, AbsPath.c_str(), 0);
     STUFF->st_searchpath = namelist_append(STUFF->st_searchpath, AudiosPath.c_str(), 0);
@@ -96,7 +98,5 @@ extern "C" void neimog_setup(void) {
     // utils
     infinite0x2erecord_tilde_setup();
 
-    // reset external
-    class_set_extern_dir(&s_);
     post("[pd-neimog] version %d.%d.%d", 0, 1, 0);
 }
