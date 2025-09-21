@@ -6,6 +6,13 @@ set(PD_BUILD_STATIC_OBJECTS ON)
 set(POSITION_INDEPENDENT_CODE ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
+if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+  add_compile_options(
+    -Wno-deprecated # disables deprecated warnings
+    -Wno-unused-parameter # disables unused parameter warnings
+  )
+endif()
+
 if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
   set(CMAKE_EXE_LINKER_FLAGS
       "${CMAKE_EXE_LINKER_FLAGS} -static-libgcc -static-libstdc++")
@@ -190,6 +197,7 @@ add_subdirectory(Sources/vstplugin~/ EXCLUDE_FROM_ALL)
 # vsts
 add_subdirectory(Sources/vst3/Fire EXCLUDE_FROM_ALL)
 include(Resources/cmake/dragonfly.cmake)
+include(Resources/cmake/else.cmake)
 
 # ╭──────────────────────────────────────╮
 # │           Library Sources            │

@@ -20,10 +20,10 @@ static void arrayinvert_bang(arrayinvert *x) {
 
     t_symbol *pd_symbol = gensym(x->arrayname.c_str());
     if (!(array = (t_garray *)pd_findbyclass(pd_symbol, garray_class))) {
-        pd_error(x, "[Python] Array %s not found.", x->arrayname.c_str());
+        pd_error(x, "[a.invert] array %s not found.", x->arrayname.c_str());
         return;
     } else if (!garray_getfloatwords(array, &vecsize, &vec)) {
-        pd_error(x, "[Python] Bad template for tabwrite '%s'.", x->arrayname.c_str());
+        pd_error(x, "[a.invert] Bad template for tabwrite '%s'.", x->arrayname.c_str());
         return;
     }
 

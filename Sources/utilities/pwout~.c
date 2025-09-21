@@ -266,16 +266,14 @@ static t_int *pw_out_perform(t_int *w) {
 
 static void pw_out_dsp(t_pw_out_t *x, t_signal **sp) {
     x->sr = (int)sp[0]->s_sr;
-
-    /* nargs = x + n + ichcount input vectors */
     const int nargs = 2 + (int)x->ichcount;
-
     t_int *sigvec = (t_int *)getbytes((size_t)nargs * sizeof(t_int));
     if (!sigvec)
         return;
 
     sigvec[0] = (t_int)x;
     sigvec[1] = (t_int)sp[0]->s_n;
+    logpost(x, 3, "Vector size %d", sp[0]->s_n);
     for (unsigned j = 0; j < x->ichcount; j++) {
         sigvec[2 + j] = (t_int)sp[j]->s_vec;
     }
@@ -308,7 +306,7 @@ static void *pw_out_new(t_symbol *s, int argc, t_atom *argv) {
     x->stream = NULL;
     x->tmp_iobuf = NULL;
     x->tmp_cap = 0;
-    x->sr = 48000;
+    x->sr = sys_getsr();
     x->ichcount = ichcount;
 
     /* Ringbuffer: ~100 Pd blocks (64 frames) */
