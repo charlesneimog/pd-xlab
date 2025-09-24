@@ -133,7 +133,7 @@ set_target_properties(patcherize PROPERTIES POSITION_INDEPENDENT_CODE ON)
 # ╰──────────────────────────────────────╯
 set(PD_BUILD_STATIC_OBJECTS OFF)
 
-# add_subdirectory(Sources/pd-saf)
+add_subdirectory(Sources/pd-saf)
 
 set(PYVERSION "3.13")
 add_subdirectory(Sources/py4pd)
