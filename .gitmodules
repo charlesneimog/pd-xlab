@@ -27,7 +27,7 @@
 	url = https://github.com/wbrent/convolve_tilde
 [submodule "Sources/piro"]
 	path = Sources/piro
-	url = https://github.com/d-i-s/piro.git
+	url = https://github.com/charlesneimog/piro.git
 [submodule "Sources/vst3/Fire"]
 	path = Sources/vst3/Fire
 	url = https://github.com/jerryuhoo/Fire

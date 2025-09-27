@@ -13,12 +13,13 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
   )
 endif()
 
-if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+if(LINUX)
   set(CMAKE_EXE_LINKER_FLAGS
       "${CMAKE_EXE_LINKER_FLAGS} -static-libgcc -static-libstdc++")
   set(CMAKE_SHARED_LINKER_FLAGS
       "${CMAKE_SHARED_LINKER_FLAGS} -static-libgcc -static-libstdc++")
 endif()
+
 
 # ──────────────────────────────────────
 set(PDCMAKE_FILE ${CMAKE_BINARY_DIR}/pd.cmake)
@@ -199,6 +200,26 @@ add_subdirectory(Sources/vstplugin~/ EXCLUDE_FROM_ALL)
 # vsts
 add_subdirectory(Sources/vst3/Fire EXCLUDE_FROM_ALL)
 include(Resources/cmake/dragonfly.cmake)
+
+set_target_properties(dragonfly-early-reflections-vst3 PROPERTIES
+    CXX_STANDARD 17
+    CXX_STANDARD_REQUIRED YES
+    CXX_EXTENSIONS NO
+)
+
+set_target_properties(dragonfly-room-reverb-vst3 PROPERTIES
+    CXX_STANDARD 17
+    CXX_STANDARD_REQUIRED YES
+    CXX_EXTENSIONS NO
+)
+
+set_target_properties(Fire_VST3 PROPERTIES
+    CXX_STANDARD 17
+    CXX_STANDARD_REQUIRED YES
+    CXX_EXTENSIONS NO
+)
+
+
 include(Resources/cmake/else.cmake)
 
 # ╭──────────────────────────────────────╮
