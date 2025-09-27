@@ -35,7 +35,7 @@ jobs:
       - name: Build
         run: |
           cmake . -B build -DPDLIBDIR=./ -DCMAKE_BUILD_TYPE=Release -DPYVERSION=${{env.PYVERSION}}
-          cmake --build build --parallel
+          cmake --build build --parallel $(sysctl -n hw.ncpu)
           cmake --install build
       - name: Upload ONNX Folder
         uses: actions/upload-artifact@v4
@@ -70,7 +70,7 @@ jobs:
           cmake . -B build -DPD_FLOATSIZE=${{ matrix.precision }} -DCMAKE_SYSTEM_PROCESSOR=${{ matrix.arch }} -DPDLIBDIR=./ -DCMAKE_BUILD_TYPE=Release -DPYVERSION=${{env.PYVERSION}}
       - name: Build Object
         run: |
-          cmake --build build -- -j$(nproc)
+          cmake --build build -j$(nproc)
           cmake --install build
       - name: Upload Object
         uses: actions/upload-artifact@v4

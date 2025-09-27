@@ -186,16 +186,15 @@ endif()
 # │             VST PLUGINS              │
 # ╰──────────────────────────────────────╯
 
-set(PD ON)
-set(SC OFF)
-set(TESTSUITE OFF)
-set(VST2 OFF)
-set(BRIDGE OFF)
-set(VST3DIR
-    "./Sources/vst3/Fire/JUCE/modules/juce_audio_processors/format_types/VST3_SDK/"
-)
+set(PD ON CACHE BOOL "Force PD ON" FORCE)
+set(SC OFF CACHE BOOL "Force SC OFF" FORCE)
+set(TESTSUITE OFF CACHE BOOL "Force TESTSUITE OFF" FORCE)
+set(VST2 OFF CACHE BOOL "Force VST2 OFF" FORCE)
+set(BRIDGE OFF CACHE BOOL "Force BRIDGE OFF" FORCE)
+set(VST3DIR "./Sources/vst3/Fire/JUCE/modules/juce_audio_processors/format_types/VST3_SDK/" CACHE PATH "Force VST3 SDK path" FORCE)
+
 include_directories("${VST3DIR}")
-add_subdirectory(Sources/vstplugin~/ EXCLUDE_FROM_ALL)
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/Sources/vstplugin~/ EXCLUDE_FROM_ALL)
 
 # vsts
 add_subdirectory(Sources/vst3/Fire EXCLUDE_FROM_ALL)
@@ -249,6 +248,7 @@ set_target_properties(neimog PROPERTIES CXX_STANDARD 20)
 
 add_dependencies(neimog py4pd)
 add_dependencies(neimog Fire_VST3)
+add_dependencies(neimog vstplugin_tilde)
 
 if(LINUX)
   add_dependencies(neimog pwout_tilde)
@@ -292,5 +292,4 @@ install(
       "${PDLIBDIR}/${PROJECT_NAME}/vst3/dragonfly-room-reverb.vst3/Contents/${ARCHITECTURE}-${PLATFORM}"
 )
 
-install(TARGETS vstplugin_tilde
-        LIBRARY DESTINATION "${PDLIBDIR}/${PROJECT_NAME}/")
+install(TARGETS vstplugin_tilde LIBRARY DESTINATION "${PDLIBDIR}/${PROJECT_NAME}/")
