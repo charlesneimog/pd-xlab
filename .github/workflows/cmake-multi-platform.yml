@@ -1,128 +1,46 @@
 ---
-name: C/C++ CI
+name: Compile PureData Object
 on:
   workflow_dispatch:
+    inputs:
+      publish_release:
+        description: Publish a GitHub Release using LIBVERSION after build
+        required: false
+        type: boolean
+        default: false
 env:
   LIBNAME: neimog
-  LIBVERSION: 0.2
+  LIBVERSION: "0.1.0"
+  PYVERSION: "3.13"
+permissions:
+  contents: write
 jobs:
-  macos-build:
+  macos:
+    runs-on: ${{ matrix.machines }}
     strategy:
       matrix:
         precision: [32, 64]
-        os: [macos-13, macos-latest]
-    runs-on: ${{ matrix.os }}
+        machines: [macos-13, macos-latest]
     steps:
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{env.PYVERSION}}
       - uses: actions/checkout@v4
         with:
           submodules: recursive
-          fetch-depth: 1
-          token: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Cache CMake build
-        uses: actions/cache@v4
-        with:
-          path: build
-          key: build-${{ matrix.os }}-${{ matrix.precision }}-${{ hashFiles('**/CMakeLists.txt') }}
-          restore-keys: |
-            build-${{ matrix.os }}-${{ matrix.precision }}-
-            build-${{ matrix.os }}-
-
-      - name: Install dependencies
+          fetch-depth: 0
+      - name: Install PureData and Deps
         run: |
           brew install pd
-
-      - name: Configure and Build
+      - name: Build
         run: |
-          # Clean existing build if cache restored but CMake config changed
-          cmake -E remove_directory build || true
-          
-          cmake -B build -S . \
-            -DPD_FLOATSIZE=${{ matrix.precision }} \
-            -DPDLIBDIR=./
-          cmake --build build --parallel $(sysctl -n hw.logicalcpu)
+          cmake . -B build -DPDLIBDIR=./ -DCMAKE_BUILD_TYPE=Release -DPYVERSION=${{env.PYVERSION}}
+          cmake --build build --parallel
           cmake --install build
-
-      - name: Upload Artifact
+      - name: Upload ONNX Folder
         uses: actions/upload-artifact@v4
         with:
-          name: ${{env.LIBNAME}}-${{matrix.os}}-${{matrix.precision}}
-          path: ${{env.LIBNAME}}
-  windows-build:
-    runs-on: windows-latest
-    strategy:
-      matrix:
-        compiler: [mingw]
-        arch: [amd64]
-        precision: [32, 64]
-      
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-        with:
-          submodules: recursive
-          fetch-depth: 1
-          token: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Cache build artifacts
-        uses: actions/cache@v4
-        with:
-          path: build
-          key: build-${{ matrix.compiler }}-${{ matrix.arch }}-${{ matrix.precision }}-${{ hashFiles('**/CMakeLists.txt') }}
-          restore-keys: |
-            build-${{ matrix.compiler }}-${{ matrix.arch }}-${{ matrix.precision }}-
-            build-${{ matrix.compiler }}-${{ matrix.arch }}-
-            build-${{ matrix.compiler }}-
-
-      # ──────────────────────────────────────
-      - if: matrix.compiler == 'msvc'
-        name: Set up Visual Studio Build Tools
-        uses: microsoft/setup-msbuild@v2
-
-      - if: matrix.compiler == 'mingw'
-        name: Set up Msys2
-        uses: msys2/setup-msys2@v2
-        with:
-          msystem: mingw64
-          install: >-
-            make 
-            autoconf 
-            automake 
-            libtool 
-            mingw-w64-x86_64-gcc 
-            mingw-w64-x86_64-cmake
-          update: false
-
-      - name: Install winget
-        uses: Cyberboss/install-winget@v1
-
-      - name: Install PureData
-        run: |
-          if (${{ matrix.precision }} -eq 32) {
-            winget install -e --id MillerPuckette.PureData --accept-source-agreements
-          } else {
-            winget install -e --id MillerPuckette.Pd64 --accept-source-agreements
-          }
-
-      - name: Configure and build
-        shell: msys2 {0}
-        run: |
-          # Clean build directory if CMake configuration changed
-          if [ ! -f build/CMakeCache.txt ]; then
-            rm -rf build/*
-          fi
-          
-          rm ./build/pd.cmake
-          cmake -B build -S . \
-            -DPD_FLOATSIZE=${{ matrix.precision }} \
-            -DPDLIBDIR=./
-          cmake --build build --parallel $NUMBER_OF_PROCESSORS 
-          cmake --install build
-
-      - name: Upload Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{env.LIBNAME}}-f${{ matrix.precision }}-windows-${{ matrix.compiler }}
+          name: ${{env.LIBNAME}}-${{env.LIBVERSION}}-${{matrix.machines}}-pd${{matrix.precision}}
           path: ${{env.LIBNAME}}
   linux-build:
     runs-on: ubuntu-latest
@@ -131,85 +49,107 @@ jobs:
         arch: [amd64]
         precision: [32, 64]
     steps:
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{env.PYVERSION}}
       - uses: actions/checkout@v4
         with:
           submodules: recursive
           fetch-depth: 1
-      - name: Restore cache
-        uses: actions/cache@v4
-        with:
-          path: build
-          key: build-cache-${{ runner.os }}-${{ matrix.precision }}
-          token: ${{ secrets.GITHUB_TOKEN }}
-          restore-keys: |
-            build-cache-${{ runner.os }}-
       - name: PureData Sources
         run: |
           sudo apt update
           sudo add-apt-repository ppa:pure-data/pure-data -y
           sudo apt install puredata -y
-      - name: Install aarch64 gcc
-        if: matrix.arch == 'aarch64'
-        run: |
-          sudo apt install gcc-aarch64-linux-gnu -y
-          sudo apt install g++-aarch64-linux-gnu -y
-      - name: Install arm gcc
-        if: matrix.arch == 'arm'
-        run: |
-          sudo apt install gcc-arm-linux-gnueabihf -y
-          sudo apt install g++-arm-linux-gnueabihf -y
-      - name: Build Object
+          sudo apt install libpipewire-0.3-dev -y
+          sudo apt install libfreetype6-dev libx11-dev libxext-dev libxinerama-dev libxcursor-dev libxrandr-dev libxcomposite-dev libglib2.0-dev libgtk-3-dev libasound2-dev libpulse-dev libcurl4-openssl-dev libssl-dev libfftw3-dev libsndfile1-dev libsqlite3-dev -y
+
+      - name: Configure
         if: matrix.arch == 'amd64'
         run: |
-          cmake . -B build -DPD_FLOATSIZE=${{ matrix.precision }} -DPDLIBDIR=./
-          cmake --build build -- -j$(nproc)
-          cmake --install build
+          cmake . -B build -DPD_FLOATSIZE=${{ matrix.precision }} -DCMAKE_SYSTEM_PROCESSOR=${{ matrix.arch }} -DPDLIBDIR=./ -DCMAKE_BUILD_TYPE=Release -DPYVERSION=${{env.PYVERSION}}
       - name: Build Object
-        if: matrix.arch == 'aarch64'
         run: |
-          cmake . -B build -DPD_FLOATSIZE=${{ matrix.precision }} -DCMAKE_SYSTEM_PROCESSOR=aarch64 -DPDLIBDIR=./
-          cmake --build build -- -j$(nproc)
-          cmake --install build
-      - name: Build Object
-        if: matrix.arch == 'arm'
-        run: |
-          cmake . -B build -DPD_FLOATSIZE=${{ matrix.precision }} -DCMAKE_SYSTEM_PROCESSOR=arm -DPDLIBDIR=./
           cmake --build build -- -j$(nproc)
           cmake --install build
       - name: Upload Object
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ env.LIBNAME }}-linux-${{matrix.arch}}-${{matrix.precision}}
+          name: ${{env.LIBNAME}}-${{env.LIBVERSION}}-linux-${{matrix.arch}}-pd${{matrix.precision}}
           path: ${{env.LIBNAME}}
-      - name: Save cache
-        uses: actions/cache@v4
-        with:
-          path: build
-          key: build-cache-${{ runner.os }}-${{ matrix.precision }}
-
-  package-artifacts:
-    needs: [macos-build, windows-build, linux-build]
-    runs-on: ubuntu-latest
-    steps:
-      - name: Download artifacts
-        uses: actions/download-artifact@v4
-        with:
-          pattern: ${{ env.LIBNAME }}-*
-          path: artifacts
-          merge-multiple: true
-      - name: Clear tmp files
-        run: rm -f artifacts/*.pdb
-        # ──────────────────────────────────────
-      - name: Install Deken
-        run: |
-          mkdir -p ${PWD}/package
-          docker run --rm --user $(id -u) \
-          --volume ${PWD}/artifacts:/${{env.LIBNAME}} \
-          --volume ${PWD}/package:/package \
-          registry.git.iem.at/pd/deken \
-          deken package /${{env.LIBNAME}} --output-dir /package -v ${{env.LIBVERSION}} -n ${{env.LIBNAME}}
-      - name: Upload Deken
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ env.LIBNAME }}-${{env.LIBVERSION}}
-          path: ./package/
+  # windows-build:
+  #   runs-on: windows-latest
+  #   strategy:
+  #     matrix:
+  #       compiler: [mingw]
+  #       arch: [amd64]
+  #       precision: [32, 64]
+  #   steps:
+  #     - uses: actions/setup-python@v5
+  #       with:
+  #         python-version: ${{env.PYVERSION}}
+  #     - name: Checkout repository
+  #       uses: actions/checkout@v4
+  #       with:
+  #         submodules: recursive
+  #         fetch-depth: 0
+  #     - if: matrix.compiler == 'mingw'
+  #       name: Set up Msys2
+  #       uses: msys2/setup-msys2@v2
+  #       with:
+  #         msystem: mingw64
+  #         install: make mingw-w64-x86_64-gcc mingw64/mingw-w64-x86_64-cmake
+  #         update: false
+  #     - name: Install winget
+  #       uses: Cyberboss/install-winget@v1
+  #     - name: Install PureData Float 32
+  #       if: matrix.precision == '32'
+  #       run: |
+  #         winget install -e --id MillerPuckette.PureData --accept-source-agreements
+  #     - name: Install PureData Float 64
+  #       if: matrix.precision == '64'
+  #       run: |
+  #         winget install -e --id MillerPuckette.Pd64 --accept-source-agreements
+  #     - name: Configure and build Mingw
+  #       shell: msys2 {0}
+  #       if: matrix.compiler == 'mingw'
+  #       run: |
+  #         cmake . -B build -DPD_FLOATSIZE=${{ matrix.precision }} -DCMAKE_SYSTEM_PROCESSOR=${{ matrix.arch }} -DPDLIBDIR=./ -DCMAKE_BUILD_TYPE=Release -DPYVERSION=${{env.PYVERSION}}
+  #         cmake --build build --parallel
+  #         cmake --install build
+  #     - name: Upload
+  #       uses: actions/upload-artifact@v4
+  #       with:
+  #         name: ${{env.LIBNAME}}-windows-${{ matrix.arch }}-pd${{matrix.precision}}
+  #         path: ${{env.LIBNAME}}
+  # publish-release:
+  #   if: ${{ github.event.inputs.publish_release == 'true' }}
+  #   needs: [macos, linux-build, windows-build]
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - name: Download all artifacts
+  #       uses: actions/download-artifact@v4
+  #       with:
+  #         path: artifacts
+  #     - name: Create unified onnx directory and archive
+  #       run: |
+  #         set -e
+  #         TOPDIR="$LIBNAME"
+  #         mkdir -p "$TOPDIR"
+  #         for artifact_dir in artifacts/*; do
+  #           [ -d "$artifact_dir" ] || continue
+  #           cp -r "$artifact_dir/"* "$TOPDIR/"
+  #         done
+  #         ls -1 "$TOPDIR"
+  #         ZIP_NAME="${LIBNAME}-${LIBVERSION}-all-platforms.zip"
+  #         zip -r "$ZIP_NAME" "$TOPDIR"
+  #     - name: Create / Update GitHub Release
+  #       uses: softprops/action-gh-release@v2
+  #       with:
+  #         tag_name: v${{ env.LIBVERSION }}
+  #         name: ${{ env.LIBNAME }} v${{ env.LIBVERSION }}
+  #         target_commitish: ${{ github.sha }}
+  #         files: |
+  #           ${{ env.LIBNAME }}-${{ env.LIBVERSION }}-all-platforms.zip
+  #         draft: true
+  #         prerelease: false

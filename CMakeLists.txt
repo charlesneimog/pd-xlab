@@ -133,9 +133,8 @@ set_target_properties(patcherize PROPERTIES POSITION_INDEPENDENT_CODE ON)
 # ╰──────────────────────────────────────╯
 set(PD_BUILD_STATIC_OBJECTS OFF)
 
+add_subdirectory(Sources/onnx)
 add_subdirectory(Sources/pd-saf)
-
-set(PYVERSION "3.13")
 add_subdirectory(Sources/py4pd)
 
 # │              convolve~               │
@@ -168,16 +167,19 @@ pd_add_datafile(
 target_compile_definitions(multiconvolve_tilde PRIVATE UNIX)
 
 # ─────────────────────────────────────
-find_package(PkgConfig REQUIRED)
-pkg_check_modules(PIPEWIRE REQUIRED libpipewire-0.3)
+if(LINUX)
+  find_package(PkgConfig REQUIRED)
+  pkg_check_modules(PIPEWIRE REQUIRED libpipewire-0.3)
 
-pd_add_external(pwout~ "${CMAKE_CURRENT_SOURCE_DIR}/Sources/utilities/pwout~.c")
-target_link_libraries(pwout_tilde PUBLIC ${PIPEWIRE_LIBRARIES})
-target_include_directories(pwout_tilde PUBLIC ${PIPEWIRE_INCLUDE_DIRS})
+  pd_add_external(pwout~
+                  "${CMAKE_CURRENT_SOURCE_DIR}/Sources/utilities/pwout~.c")
+  target_link_libraries(pwout_tilde PUBLIC ${PIPEWIRE_LIBRARIES})
+  target_include_directories(pwout_tilde PUBLIC ${PIPEWIRE_INCLUDE_DIRS})
 
-pd_add_external(pwin~ "${CMAKE_CURRENT_SOURCE_DIR}/Sources/utilities/pwin~.c")
-target_link_libraries(pwin_tilde PUBLIC ${PIPEWIRE_LIBRARIES})
-target_include_directories(pwin_tilde PUBLIC ${PIPEWIRE_INCLUDE_DIRS})
+  pd_add_external(pwin~ "${CMAKE_CURRENT_SOURCE_DIR}/Sources/utilities/pwin~.c")
+  target_link_libraries(pwin_tilde PUBLIC ${PIPEWIRE_LIBRARIES})
+  target_include_directories(pwin_tilde PUBLIC ${PIPEWIRE_INCLUDE_DIRS})
+endif()
 
 # ╭──────────────────────────────────────╮
 # │             VST PLUGINS              │
@@ -210,7 +212,6 @@ file(GLOB NEIMOG_LUA "${CMAKE_CURRENT_SOURCE_DIR}/Sources/lua/*.pd_lua")
 file(GLOB NEIMOG_PY "${CMAKE_CURRENT_SOURCE_DIR}/Sources/python/*.pd_py")
 
 pd_add_external(neimog "${PD_NEIMOG};${ONSETSDS_SOURCES}")
-
 pd_add_datafile(neimog "${NEIMOG_ABS}")
 pd_add_datafile(neimog "${NEIMOG_HELP}")
 pd_add_datafile(neimog "${CMAKE_CURRENT_SOURCE_DIR}/Sources/lua")
@@ -225,18 +226,13 @@ target_link_libraries(neimog PUBLIC patcherize statistics arrays manipulations
                                     mir utilities)
 set_target_properties(neimog PROPERTIES CXX_STANDARD 20)
 
-# List of external dependencies
-set(ADICIONAL_EXTERNALS py4pd Fire pwout_tilde pwin_tilde)
-
-# Add dependencies for target 'neimog'
-foreach(ext IN LISTS ADICIONAL_EXTERNALS)
-  add_dependencies(neimog ${ext})
-endforeach()
-
 add_dependencies(neimog py4pd)
 add_dependencies(neimog Fire_VST3)
-add_dependencies(neimog pwout_tilde)
-add_dependencies(neimog pwin_tilde)
+
+if(LINUX)
+  add_dependencies(neimog pwout_tilde)
+  add_dependencies(neimog pwin_tilde)
+endif()
 
 # Install vst3
 if(CMAKE_SIZEOF_VOID_P EQUAL 8)

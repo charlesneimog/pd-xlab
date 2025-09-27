@@ -37,3 +37,6 @@
 [submodule "Sources/vstplugin~"]
 	path = Sources/vstplugin~
 	url = https://git.iem.at/pd/vstplugin.git
+[submodule "Sources/onnx"]
+	path = Sources/onnx
+	url = https://github.com/charlesneimog/pd-onnx
