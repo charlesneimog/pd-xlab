@@ -1,4 +1,5 @@
 #include "onsetsds.h"
+
 #include <m_pd.h>
 #include <math.h>
 
@@ -84,10 +85,6 @@ static void onsetsds_tilde_set(t_onsetsds_tilde *x, t_symbol *s, int argc, t_ato
             pd_error(x, "  0: None");
             pd_error(x, "  1: Adaptive max 1");
         }
-    } else if (strcmp(method, "fftsize") == 0) {
-        // x->fftsize=atom_getint(argv+1);
-        // onsetsds_tilde_restart(x);
-    } else if (strcmp(method, "whtype") == 0) {
     } else {
         pd_error(x, "Unknown method");
     }

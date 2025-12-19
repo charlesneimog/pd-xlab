@@ -1,6 +1,6 @@
-# pd-neimog
+# pd-xlab
 
-**pd-neimog** is a collection of objects, tools, and integrations for **Pure Data (Pd)** that I use in my work. It focus on Signal Manipulation, Statistics, Music Information Retrieval (MIR), Python/Lua scripting, and include all my libraries: 
+**pd-xlab** is a collection of objects, tools, and integrations for **Pure Data (Pd)** that I use in my work. It focus on Signal Manipulation, Statistics, Music Information Retrieval (MIR), Python/Lua scripting, and include all my libraries: 
 * `pd-partialtrack`, 
 * `pd-saf`, 
 * `pd-vamp`, 
@@ -33,41 +33,18 @@ and also some libraries I fork, update or simply use:
 ### 1. Clone the repository
 
 ```bash
-git clone https://github.com/user/pd-neimog.git
-cd pd-neimog
+git clone https://github.com/user/pd-xlab.git
+cd pd-xlab
 ```
-
-Initialize submodules:
-
-```bash
-git submodule update --init --recursive
-```
-
----
 
 ### 2. Create a build directory
 
 ```bash
-mkdir build && cd build
+cmake . -B build
+cmake --build build
 ```
 
----
-
-### 3. Run CMake
-
-```bash
-cmake ..
-```
-
----
-
-### 4. Build
-
-```bash
-cmake --build . -j8
-```
-
-Compiled Pd objects and binaries will be available in the output directory.
+Compiled Pd objects and binaries will be available in the output directory (`build/xlab`).
 
 ---
 
