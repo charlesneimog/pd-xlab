@@ -1,17 +1,18 @@
 # pd-xlab
 
 **pd-xlab** is a collection of objects, tools, and integrations for **Pure Data (Pd)** that I use in my work. It focus on Signal Manipulation, Statistics, Music Information Retrieval (MIR), Python/Lua scripting, and include all my libraries: 
-* `pd-partialtrack`, 
-* `pd-saf`, 
-* `pd-vamp`, 
-* `pd-server`,
-* `pd-ambi`,
-* `pd-upic`,
 
-and also some libraries I fork, update or simply use:
-* `kalman-pd`
-* `SOFAlizer-for-pd`
-* `earplug~`
+* `pd-ambi`,
+* `pd-saf`, 
+* `o.scofo~`,
+* `pd-partialtrack`, 
+* `pd-onnx`,
+
+* `py4pd`
+* `pd-lua`
+
+* `pd-orchidea`
+* `pd-upic`,
 
 ---
 

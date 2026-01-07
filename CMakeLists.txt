@@ -8,8 +8,7 @@ set(POSITION_INDEPENDENT_CODE ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 # Version
-set(PYVERSION 3.13)
-set(PD_OUTPUT_PATH "${CMAKE_BINARY_DIR}/xlab")
+set(PYVERSION "3.13" CACHE STRING "Version of Python used in py4pd")
 
 # ╭──────────────────────────────────────╮
 # │                FLAGS                 │
@@ -23,12 +22,12 @@ endif()
 # │               pd.cmake               │
 # ╰──────────────────────────────────────╯
 set(PDCMAKE_FILE ${CMAKE_BINARY_DIR}/pd.cmake)
+set(PDCMAKE_VERSION "v0.2.11")
 if(NOT EXISTS ${PDCMAKE_FILE})
     message(STATUS "Downloading pd.cmake")
-    file(
-        DOWNLOAD https://raw.githubusercontent.com/pure-data/pd.cmake/refs/tags/v0.2.11/pd.cmake ${PDCMAKE_FILE}
-        SHOW_PROGRESS
-        STATUS DOWNLOAD_STATUS)
+    file(DOWNLOAD 
+    https://github.com/pure-data/pd.cmake/releases/download/v2.0.11/pd.cmake ${PDCMAKE_FILE} 
+    STATUS DOWNLOAD_STATUS)
 endif()
 include(${PDCMAKE_FILE})
 
@@ -104,47 +103,97 @@ file(GLOB mir_source "${CMAKE_CURRENT_SOURCE_DIR}/src/mir/*.cpp")
 add_library(mir STATIC "${mir_source}")
 set_target_properties(mir PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
-# onsetsds
-file(GLOB ONSETSDS_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/src/mir/onsetsds~/*.c")
-add_library(onsetsds STATIC "${ONSETSDS_SOURCES}")
-set_target_properties(onsetsds PROPERTIES POSITION_INDEPENDENT_CODE ON)
-
 # utilities
 file(GLOB utilities_src "${CMAKE_CURRENT_SOURCE_DIR}/src/utilities/*.cpp")
 add_library(utilities STATIC "${utilities_src}")
 set_target_properties(utilities PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
+# main object
+pd_add_external(xlab "${CMAKE_CURRENT_SOURCE_DIR}/src/xlab.cpp")
+file(GLOB XLAB_FILES "${CMAKE_BINARY_DIR}/${PROJECT_NAME}/*")
+pd_add_datafile(xlab "${XLAB_FILES}")
+target_link_libraries(xlab PRIVATE utilities manipulations arrays statistics)
+
+
 # ╭──────────────────────────────────────╮
-# │                 CPM                  │
+# │          Externals Objects           │
 # ╰──────────────────────────────────────╯
+# ELSE
+unset(PD_OUTPUT_PATH)
+cpmaddpackage(URI "gh:jimmy-park/openssl-cmake#3.6.0" OPTIONS "OPENSSL_USE_STATIC_LIBS ON" "BUILD_SHARED_LIBS OFF")
+cpmaddpackage("gh:porres/pd-else#master")
+
+if(pd-else_ADDED)
+    # abstraction
+    pd_add_datafile(xlab "${pd-else_SOURCE_DIR}/Abstractions/Control/count.pd")
+
+    # help files
+    pd_add_datafile(xlab "${pd-else_SOURCE_DIR}/Documentation/Help-files/giga.rev~-help.pd")
+    pd_add_datafile(xlab "${pd-else_SOURCE_DIR}/Documentation/Help-files/plaits~-help.pd")
+
+    pd_add_datafile(xlab "${pd-else_SOURCE_DIR}/Documentation/Help-files/count-help.pd")
+endif()
 
 # ╭──────────────────────────────────────╮
 # │         Externals Libraries          │
 # ╰──────────────────────────────────────╯
-cpmaddpackage("gh:charlesneimog/py4pd#v1.0.2")
+set(PD_OUTPUT_PATH "${CMAKE_BINARY_DIR}/xlab")
+cpmaddpackage("gh:charlesneimog/py4pd#master")
 cpmaddpackage("gh:charlesneimog/pd-ambi#main")
+cpmaddpackage("gh:charlesneimog/pv_tilde#main")
+
+# lua
 cpmaddpackage("gh:charlesneimog/pd-upic#main")
 cpmaddpackage("gh:charlesneimog/pd-orchidea#main")
-cpmaddpackage("gh:charlesneimog/pd-onnx#main")
+cpmaddpackage("gh:EL-LOCUS-SOLUS/pd-bhack#main")
 
+# single objects
+cpmaddpackage("gh:charlesneimog/pd-onnx#main")
+cpmaddpackage("gh:charlesneimog/onsetsds_tilde#v0.1.0")
+
+# saf
 cpmaddpackage("gh:EL-LOCUS-SOLUS/pd-saf#main")
-cpmaddpackage("gh:EL-LOCUS-SOLUS/pd-lua#master")
+
+# ╭──────────────────────────────────────╮
+# │          Externals Objects           │
+# ╰──────────────────────────────────────╯
+set(PDELSE_OBJECTS giga.rev_tilde plaits_tilde play.file_tilde)
+foreach(obj ${PDELSE_OBJECTS})
+    if(TARGET ${obj})
+        set_target_properties(${obj} PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/${PROJECT_NAME}")
+        set_target_properties(
+            ${obj}
+            PROPERTIES LIBRARY_OUTPUT_DIRECTORY_DEBUG "${CMAKE_BINARY_DIR}/${PROJECT_NAME}"
+                       LIBRARY_OUTPUT_DIRECTORY_RELEASE "${CMAKE_BINARY_DIR}/${PROJECT_NAME}"
+                       LIBRARY_OUTPUT_DIRECTORY_RELWITHDEBINFO "${CMAKE_BINARY_DIR}/${PROJECT_NAME}"
+                       LIBRARY_OUTPUT_DIRECTORY_MINSIZEREL "${CMAKE_BINARY_DIR}/${PROJECT_NAME}")
+    else()
+        message(WARNING "Target ${obj} not found")
+    endif()
+endforeach()
 
 # ╭──────────────────────────────────────╮
 # │             xlab library             │
 # ╰──────────────────────────────────────╯
-pd_add_external(xlab "${CMAKE_CURRENT_SOURCE_DIR}/src/xlab.cpp")
-target_link_libraries(xlab PRIVATE utilities manipulations arrays statistics)
 add_dependencies(
     xlab
     py4pd
+    # lua
     upic
+    orchidea
+    bhack
+    # extra
     pdonnx
     pdlua
-
+    pv_tilde
+    # o.scofo_tilde
+    onsetsds_tilde
     saf.encoder_tilde
     saf.decoder_tilde
     saf.binaural_tilde
     saf.roomsim_tilde
     saf.panner_tilde
-)
+    # else
+    giga.rev_tilde
+    plaits_tilde
+    play.file_tilde)
