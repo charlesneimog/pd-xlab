@@ -6,12 +6,19 @@
 #include <limits>
 
 static t_class *besseldrum_tilde_class = nullptr;
-
 constexpr int kMaxModes = 128;
 constexpr int kMaxOrder = 32;
 constexpr int kMaxRadial = 32;
 constexpr int kMaxCandidates = (kMaxOrder + 1) * kMaxRadial;
 constexpr double kPi = 3.141592653589793238462643383279502884;
+
+#if defined(__APPLE__) || defined(__EMSCRIPTEN__)
+#include <boost/math/special_functions/bessel.hpp>
+#define CYL_BESSEL_J(v, x) boost::math::cyl_bessel_i(v, x)
+#else
+#include <cmath>
+#define CYL_BESSEL_J(v, x) std::cyl_bessel_j(v, x)
+#endif
 
 // The spatial modes below remain the zeros of J_m, which are exact for an
 // ideal fixed circular membrane. Adding D*k^4 gives useful stiff-membrane
@@ -109,7 +116,8 @@ typedef struct _besseldrum_tilde {
 
 // ─────────────────────────────────────
 static double bessel_j(int order, double x) {
-    return std::cyl_bessel_j(static_cast<double>(order), x);
+    //
+    return CYL_BESSEL_J(static_cast<double>(order), x);
 }
 
 // ─────────────────────────────────────
@@ -217,14 +225,10 @@ static void besseldrum_clear(t_besseldrum_tilde *x) {
 }
 
 // ─────────────────────────────────────
-static bool finite_positive(double value) {
-    return std::isfinite(value) && value > 0.0;
-}
+static bool finite_positive(double value) { return std::isfinite(value) && value > 0.0; }
 
 // ─────────────────────────────────────
-static bool finite_nonnegative(double value) {
-    return std::isfinite(value) && value >= 0.0;
-}
+static bool finite_nonnegative(double value) { return std::isfinite(value) && value >= 0.0; }
 
 // ─────────────────────────────────────
 static double besseldrum_areal_density(const t_besseldrum_tilde *x) {
@@ -246,13 +250,12 @@ static double besseldrum_mode_frequency(const t_besseldrum_tilde *x, double alph
     const long double thickness = x->thickness;
     const long double sigma = density * thickness;
     const long double poisson = x->poisson;
-    const long double bending =
-        static_cast<long double>(x->young) * thickness * thickness * thickness /
-        (12.0L * (1.0L - poisson * poisson));
+    const long double bending = static_cast<long double>(x->young) * thickness * thickness *
+                                thickness / (12.0L * (1.0L - poisson * poisson));
     const long double k = static_cast<long double>(alpha) / x->radius;
     const long double k2 = k * k;
-    const long double omega2 = (static_cast<long double>(x->tension) / sigma) * k2 +
-                               (bending / sigma) * k2 * k2;
+    const long double omega2 =
+        (static_cast<long double>(x->tension) / sigma) * k2 + (bending / sigma) * k2 * k2;
 
     if (std::isnan(omega2) || omega2 <= 0.0L)
         return 0.0;
@@ -275,8 +278,7 @@ static void besseldrum_update_coefficients(t_besseldrum_tilde *x) {
         Mode &mode = x->modes[i];
         mode.frequency = besseldrum_mode_frequency(x, mode.alpha);
         mode.decay_rate = std::isfinite(mode.frequency)
-                              ? x->loss0 + mode.frequency *
-                                             (x->loss1 + x->loss2 * mode.frequency)
+                              ? x->loss0 + mode.frequency * (x->loss1 + x->loss2 * mode.frequency)
                               : std::numeric_limits<double>::infinity();
         if (!std::isfinite(mode.decay_rate))
             mode.decay_rate = std::numeric_limits<double>::infinity();
@@ -285,8 +287,7 @@ static void besseldrum_update_coefficients(t_besseldrum_tilde *x) {
                                ? mode.spatial_scale * fundamental / mode.frequency
                                : 0.0;
 
-        if (!std::isfinite(mode.frequency) || mode.frequency <= 0.0 ||
-            mode.frequency >= nyquist) {
+        if (!std::isfinite(mode.frequency) || mode.frequency <= 0.0 || mode.frequency >= nyquist) {
             mode.active = 0;
             mode.a = 0.0;
             mode.b = 0.0;
@@ -297,9 +298,7 @@ static void besseldrum_update_coefficients(t_besseldrum_tilde *x) {
 
         mode.active = 1;
         const double omega = 2.0 * kPi * mode.frequency / sr;
-        const double decay = std::isfinite(mode.decay_rate)
-                                 ? std::exp(-mode.decay_rate / sr)
-                                 : 0.0;
+        const double decay = std::isfinite(mode.decay_rate) ? std::exp(-mode.decay_rate / sr) : 0.0;
         mode.a = decay * std::cos(omega);
         mode.b = decay * std::sin(omega);
     }
@@ -472,15 +471,13 @@ static void besseldrum_tune(t_besseldrum_tilde *x, t_floatarg f) {
     const long double thickness = x->thickness;
     const long double sigma = density * thickness;
     const long double poisson = x->poisson;
-    const long double bending =
-        static_cast<long double>(x->young) * thickness * thickness * thickness /
-        (12.0L * (1.0L - poisson * poisson));
+    const long double bending = static_cast<long double>(x->young) * thickness * thickness *
+                                thickness / (12.0L * (1.0L - poisson * poisson));
     const long double k = static_cast<long double>(g_alpha01) / x->radius;
     const long double k2 = k * k;
     const long double target_omega = 2.0L * kPi * value;
     long double tension = sigma * target_omega * target_omega / k2 - bending * k2;
-    const long double minimum_frequency =
-        std::sqrt((bending / sigma) * k2 * k2) / (2.0L * kPi);
+    const long double minimum_frequency = std::sqrt((bending / sigma) * k2 * k2) / (2.0L * kPi);
 
     if (!std::isfinite(tension) ||
         tension > static_cast<long double>(std::numeric_limits<double>::max())) {
@@ -662,7 +659,7 @@ static void besseldrum_modes(t_besseldrum_tilde *x, t_floatarg f) {
         pd_error(x, "besseldrum~: modes must be finite");
         return;
     }
-    const int requested = value <= 1.0     ? 1
+    const int requested = value <= 1.0         ? 1
                           : value >= kMaxModes ? kMaxModes
                                                : static_cast<int>(value);
     besseldrum_rebuild_modes(x, requested);
@@ -688,8 +685,7 @@ static void besseldrum_print(t_besseldrum_tilde *x) {
     post("  Poisson ratio: %.6g", x->poisson);
     post("  areal density sigma: %.6g kg/m2", sigma);
     post("  bending stiffness D: %.6g N*m", bending);
-    post("  losses: gamma(f) = %.6g + %.6g*f + %.6g*f^2 [1/s]", x->loss0,
-         x->loss1, x->loss2);
+    post("  losses: gamma(f) = %.6g + %.6g*f + %.6g*f^2 [1/s]", x->loss0, x->loss1, x->loss2);
     if (x->num_modes > 0)
         post("  fundamental: %.3f Hz", x->modes[0].frequency);
     post("  modes: %d", x->num_modes);
@@ -715,8 +711,8 @@ static void besseldrum_print(t_besseldrum_tilde *x) {
              "(m=%d n=%d) "
              "alpha=%.6f ratio=%.4f "
              "f=%.2f Hz gamma=%.4g/s%s",
-             i + 1, mode.m, mode.n, mode.alpha, mode.ratio, mode.frequency,
-             mode.decay_rate, status);
+             i + 1, mode.m, mode.n, mode.alpha, mode.ratio, mode.frequency, mode.decay_rate,
+             status);
     }
 }
 
@@ -816,7 +812,7 @@ static void *besseldrum_new(t_symbol *, int argc, t_atom *argv) {
     if (argc >= 2) {
         const double modes = atom_getfloat(argv + 1);
         if (std::isfinite(modes)) {
-            requested_modes = modes <= 1.0     ? 1
+            requested_modes = modes <= 1.0         ? 1
                               : modes >= kMaxModes ? kMaxModes
                                                    : static_cast<int>(modes);
         }

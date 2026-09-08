@@ -20,7 +20,7 @@ endif()
 # │               pd.cmake               │
 # ╰──────────────────────────────────────╯
 set(PDCMAKE_FILE ${CMAKE_BINARY_DIR}/pd.cmake)
-set(PDCMAKE_VERSION "v0.2.18")
+set(PDCMAKE_VERSION "v0.2.19")
 if(NOT EXISTS ${PDCMAKE_FILE})
     message(STATUS "Downloading pd.cmake")
     file(DOWNLOAD https://raw.githubusercontent.com/pure-data/pd.cmake/refs/heads/main/pd.cmake ${PDCMAKE_FILE}
@@ -107,12 +107,15 @@ pd_add_external(infinite.record~ "${CMAKE_CURRENT_SOURCE_DIR}/src/utilities/infi
 pd_add_external(fdn~ "${CMAKE_CURRENT_SOURCE_DIR}/src/reverb/fdn~.cpp")
 
 # instruments
+find_package(Boost REQUIRED)
+target_link_libraries(OpenScofo PRIVATE Boost::headers)
 pd_add_external(besseldrum~ "${CMAKE_CURRENT_SOURCE_DIR}/src/instruments/besseldrum~.cpp")
 set_target_properties(
     besseldrum_tilde
     PROPERTIES CXX_STANDARD 17
                CXX_STANDARD_REQUIRED ON
                CXX_EXTENSIONS OFF)
+target_compile_definitions(besseldrum_tilde PRIVATE USE_BOOST_BESSEL)
 
 # ╭──────────────────────────────────────╮
 # │                 stk                  │
