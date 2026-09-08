@@ -76,6 +76,7 @@ file(
     ${CMAKE_BINARY_DIR}/)
 
 add_subdirectory(${CMAKE_BINARY_DIR}/fftw-3.3.10 ${CMAKE_BINARY_DIR}/fftw-3.3.10-build EXCLUDE_FROM_ALL)
+
 get_property(
     all_targets
     DIRECTORY ${CMAKE_BINARY_DIR}/fftw-3.3.10
@@ -83,6 +84,7 @@ get_property(
 
 set_target_properties(fftw3f PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 set_target_properties(fftw3f PROPERTIES POSITION_INDEPENDENT_CODE ON)
+include_directories("${CMAKE_BINARY_DIR}/fftw-3.3.10/api/")
 
 # ╭──────────────────────────────────────╮
 # │               Objects                │
@@ -108,7 +110,6 @@ pd_add_external(fdn~ "${CMAKE_CURRENT_SOURCE_DIR}/src/reverb/fdn~.cpp")
 
 # instruments
 find_package(Boost REQUIRED)
-target_link_libraries(OpenScofo PRIVATE Boost::headers)
 pd_add_external(besseldrum~ "${CMAKE_CURRENT_SOURCE_DIR}/src/instruments/besseldrum~.cpp")
 set_target_properties(
     besseldrum_tilde
@@ -116,6 +117,7 @@ set_target_properties(
                CXX_STANDARD_REQUIRED ON
                CXX_EXTENSIONS OFF)
 target_compile_definitions(besseldrum_tilde PRIVATE USE_BOOST_BESSEL)
+target_link_libraries(besseldrum_tilde PRIVATE Boost::headers)
 
 # ╭──────────────────────────────────────╮
 # │                 stk                  │
