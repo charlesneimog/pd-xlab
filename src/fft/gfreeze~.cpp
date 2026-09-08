@@ -12,10 +12,10 @@ typedef struct _gfreeze {
     t_outlet *x_out;
 
     // FFT Data
-    float *fftIn;
-    fftwf_complex *fftOut;
-    fftwf_plan fftPlan;
-    fftwf_plan ifftPlan;
+    double *fftIn;
+    fftw_complex *fftOut;
+    fftw_plan fftPlan;
+    fftw_plan ifftPlan;
 
     int fftSize;
     int halfSize;
@@ -27,7 +27,7 @@ typedef struct _gfreeze {
     float *olaBuffer;
     float *window;
     float *olaNorm;
-    fftwf_complex *fftTmp;
+    fftw_complex *fftTmp;
 
     // Multi-Frame Polar Memory
     float **framesMag;
@@ -60,7 +60,7 @@ static inline float wrap_phase(float x) {
 
 // ─────────────────────────────────────
 static void gfreeze_build_spectrum(t_gfreeze *x, float playFrame, int validFrames, int updatePhase,
-                                   fftwf_complex *dst) {
+                                   fftw_complex *dst) {
     if (validFrames < 1)
         validFrames = 1;
 
@@ -108,8 +108,7 @@ static void gfreeze_build_spectrum(t_gfreeze *x, float playFrame, int validFrame
                 float expectedAdvance =
                     (2.0f * (float)M_PI * (float)k * (float)x->hopSize) / (float)x->fftSize;
                 float dPhi = wrap_phase(phase1[k] - phase0[k] - expectedAdvance);
-                x->outPhase[k] =
-                    wrap_phase(x->outPhase[k] + expectedAdvance + (dPhi * x->speed));
+                x->outPhase[k] = wrap_phase(x->outPhase[k] + expectedAdvance + (dPhi * x->speed));
             }
         }
     }
@@ -197,7 +196,7 @@ static void gfreeze_free_processing(t_gfreeze *x) {
         x->olaNorm = NULL;
     }
     if (x->fftTmp) {
-        fftwf_free(x->fftTmp);
+        fftw_free(x->fftTmp);
         x->fftTmp = NULL;
     }
     if (x->outPhase) {
@@ -224,7 +223,7 @@ static int gfreeze_init_processing(t_gfreeze *x) {
     x->olaBuffer = (float *)calloc((size_t)x->fftSize, sizeof(float));
     x->window = (float *)malloc((size_t)x->fftSize * sizeof(float));
     x->olaNorm = (float *)calloc((size_t)x->fftSize, sizeof(float));
-    x->fftTmp = (fftwf_complex *)fftwf_alloc_complex((size_t)(x->halfSize + 1));
+    x->fftTmp = (fftw_complex *)fftw_alloc_complex((size_t)(x->halfSize + 1));
 
     x->outPhase = (float *)calloc((size_t)(x->halfSize + 1), sizeof(float));
     x->interpMag = (float *)calloc((size_t)(x->halfSize + 1), sizeof(float));
@@ -263,16 +262,16 @@ static int gfreeze_init_fft(t_gfreeze *x, int fftSize) {
     x->halfSize = fftSize / 2;
     x->hopSize = fftSize / 4;
 
-    x->fftIn = (float *)fftwf_alloc_real((size_t)x->fftSize);
-    x->fftOut = (fftwf_complex *)fftwf_alloc_complex((size_t)(x->halfSize + 1));
+    x->fftIn = (double *)fftw_alloc_real((size_t)x->fftSize);
+    x->fftOut = (fftw_complex *)fftw_alloc_complex((size_t)(x->halfSize + 1));
     if (!x->fftIn || !x->fftOut)
         return 0;
 
     memset(x->fftIn, 0, (size_t)x->fftSize * sizeof(float));
-    memset(x->fftOut, 0, (size_t)(x->halfSize + 1) * sizeof(fftwf_complex));
+    memset(x->fftOut, 0, (size_t)(x->halfSize + 1) * sizeof(fftw_complex));
 
-    x->fftPlan = fftwf_plan_dft_r2c_1d(x->fftSize, x->fftIn, x->fftOut, FFTW_ESTIMATE);
-    x->ifftPlan = fftwf_plan_dft_c2r_1d(x->fftSize, x->fftOut, x->fftIn, FFTW_ESTIMATE);
+    x->fftPlan = fftw_plan_dft_r2c_1d(x->fftSize, x->fftIn, x->fftOut, FFTW_ESTIMATE);
+    x->ifftPlan = fftw_plan_dft_c2r_1d(x->fftSize, x->fftOut, x->fftIn, FFTW_ESTIMATE);
 
     return (x->fftPlan && x->ifftPlan);
 }
@@ -326,7 +325,7 @@ static t_int *gfreeze_perform(t_int *w) {
 
         for (int i = 0; i < x->fftSize; ++i)
             x->fftIn[i] = x->analysisBuffer[i] * x->window[i];
-        fftwf_execute(x->fftPlan);
+        fftw_execute(x->fftPlan);
 
         if (!x->freeze) {
             // A. Record to Polar Storage (Must continue to capture input!)
@@ -412,7 +411,7 @@ static t_int *gfreeze_perform(t_int *w) {
         }
 
         // 3. IFFT & OLA
-        fftwf_execute(x->ifftPlan);
+        fftw_execute(x->ifftPlan);
         for (int i = 0; i < x->fftSize; ++i)
             x->olaBuffer[i] += (x->fftIn[i] * invFFT) * x->window[i];
         for (int i = 0; i < x->hopSize; ++i)
@@ -493,13 +492,13 @@ static void *gfreeze_new(t_symbol *s, int argc, t_atom *argv) {
 // ─────────────────────────────────────
 static void gfreeze_free(t_gfreeze *x) {
     if (x->fftPlan)
-        fftwf_destroy_plan(x->fftPlan);
+        fftw_destroy_plan(x->fftPlan);
     if (x->ifftPlan)
-        fftwf_destroy_plan(x->ifftPlan);
+        fftw_destroy_plan(x->ifftPlan);
     if (x->fftIn)
-        fftwf_free(x->fftIn);
+        fftw_free(x->fftIn);
     if (x->fftOut)
-        fftwf_free(x->fftOut);
+        fftw_free(x->fftOut);
     gfreeze_free_processing(x);
     gfreeze_free_frames(x);
 }

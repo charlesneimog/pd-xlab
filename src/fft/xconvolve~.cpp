@@ -18,18 +18,18 @@ typedef struct _xconv {
     int fftSize;
     int nBins;
 
-    float *xTime;
-    float *hTime;
-    float *yTime;
+    double *xTime;
+    double *hTime;
+    double *yTime;
     float *overlap;
 
-    fftwf_complex *X;
-    fftwf_complex *H;
-    fftwf_complex *Y;
+    fftw_complex *X;
+    fftw_complex *H;
+    fftw_complex *Y;
 
-    fftwf_plan fftPlanX;
-    fftwf_plan fftPlanH;
-    fftwf_plan ifftPlan;
+    fftw_plan fftPlanX;
+    fftw_plan fftPlanH;
+    fftw_plan ifftPlan;
 } t_xconv;
 
 // ─────────────────────────────────────
@@ -43,27 +43,27 @@ static int next_power_of_two(int n) {
 // ─────────────────────────────────────
 static void xconv_clear(t_xconv *x) {
     if (x->fftPlanX)
-        fftwf_destroy_plan(x->fftPlanX);
+        fftw_destroy_plan(x->fftPlanX);
     if (x->fftPlanH)
-        fftwf_destroy_plan(x->fftPlanH);
+        fftw_destroy_plan(x->fftPlanH);
     if (x->ifftPlan)
-        fftwf_destroy_plan(x->ifftPlan);
+        fftw_destroy_plan(x->ifftPlan);
 
     if (x->xTime)
-        fftwf_free(x->xTime);
+        fftw_free(x->xTime);
     if (x->hTime)
-        fftwf_free(x->hTime);
+        fftw_free(x->hTime);
     if (x->yTime)
-        fftwf_free(x->yTime);
+        fftw_free(x->yTime);
     if (x->overlap)
         free(x->overlap);
 
     if (x->X)
-        fftwf_free(x->X);
+        fftw_free(x->X);
     if (x->H)
-        fftwf_free(x->H);
+        fftw_free(x->H);
     if (x->Y)
-        fftwf_free(x->Y);
+        fftw_free(x->Y);
 
     x->fftPlanX = NULL;
     x->fftPlanH = NULL;
@@ -87,19 +87,19 @@ static void xconv_alloc(t_xconv *x, int blockSize) {
     x->fftSize = next_power_of_two(2 * blockSize - 1);
     x->nBins = x->fftSize / 2 + 1;
 
-    x->xTime = (float *)fftwf_alloc_real(x->fftSize);
-    x->hTime = (float *)fftwf_alloc_real(x->fftSize);
-    x->yTime = (float *)fftwf_alloc_real(x->fftSize);
+    x->xTime = (double *)fftw_alloc_real(x->fftSize);
+    x->hTime = (double *)fftw_alloc_real(x->fftSize);
+    x->yTime = (double *)fftw_alloc_real(x->fftSize);
 
     x->overlap = (float *)calloc(x->blockSize, sizeof(float));
 
-    x->X = (fftwf_complex *)fftwf_alloc_complex(x->nBins);
-    x->H = (fftwf_complex *)fftwf_alloc_complex(x->nBins);
-    x->Y = (fftwf_complex *)fftwf_alloc_complex(x->nBins);
+    x->X = (fftw_complex *)fftw_alloc_complex(x->nBins);
+    x->H = (fftw_complex *)fftw_alloc_complex(x->nBins);
+    x->Y = (fftw_complex *)fftw_alloc_complex(x->nBins);
 
-    x->fftPlanX = fftwf_plan_dft_r2c_1d(x->fftSize, x->xTime, x->X, FFTW_MEASURE);
-    x->fftPlanH = fftwf_plan_dft_r2c_1d(x->fftSize, x->hTime, x->H, FFTW_MEASURE);
-    x->ifftPlan = fftwf_plan_dft_c2r_1d(x->fftSize, x->Y, x->yTime, FFTW_MEASURE);
+    x->fftPlanX = fftw_plan_dft_r2c_1d(x->fftSize, x->xTime, x->X, FFTW_MEASURE);
+    x->fftPlanH = fftw_plan_dft_r2c_1d(x->fftSize, x->hTime, x->H, FFTW_MEASURE);
+    x->ifftPlan = fftw_plan_dft_c2r_1d(x->fftSize, x->Y, x->yTime, FFTW_MEASURE);
 }
 
 // ─────────────────────────────────────
@@ -121,8 +121,8 @@ static t_int *xconv_perform(t_int *w) {
         x->hTime[i] = h[i];
     }
 
-    fftwf_execute(x->fftPlanX);
-    fftwf_execute(x->fftPlanH);
+    fftw_execute(x->fftPlanX);
+    fftw_execute(x->fftPlanH);
 
     for (int k = 0; k < x->nBins; k++) {
         float xr = x->X[k][0];
@@ -133,7 +133,7 @@ static t_int *xconv_perform(t_int *w) {
         x->Y[k][1] = xr * hi + xi * hr;
     }
 
-    fftwf_execute(x->ifftPlan);
+    fftw_execute(x->ifftPlan);
 
     float scale = 1.0f / (float)F;
     for (int i = 0; i < N; i++) {

@@ -15,10 +15,10 @@ typedef struct _xconv {
     t_float x_f;
     t_outlet *x_out;
 
-    float *fftIn;
-    fftwf_complex *fftOut;
-    fftwf_plan fftPlan;
-    fftwf_plan ifftPlan;
+    double *fftIn;
+    fftw_complex *fftOut;
+    fftw_plan fftPlan;
+    fftw_plan ifftPlan;
 
     int fftSize;
     int halfSize;
@@ -249,30 +249,30 @@ static int xfreeze_init_fft(t_xfreeze *x, int fftSize) {
     if (x->hopSize < 1)
         x->hopSize = 1;
 
-    x->fftIn = (float *)fftwf_alloc_real((size_t)x->fftSize);
-    x->fftOut = (fftwf_complex *)fftwf_alloc_complex((size_t)(x->halfSize + 1));
+    x->fftIn = (double *)fftw_alloc_real((size_t)x->fftSize);
+    x->fftOut = (fftw_complex *)fftw_alloc_complex((size_t)(x->halfSize + 1));
     if (!x->fftIn || !x->fftOut) {
         if (x->fftIn)
-            fftwf_free(x->fftIn);
+            fftw_free(x->fftIn);
         if (x->fftOut)
-            fftwf_free(x->fftOut);
+            fftw_free(x->fftOut);
         x->fftIn = NULL;
         x->fftOut = NULL;
         return 0;
     }
 
     memset(x->fftIn, 0, (size_t)x->fftSize * sizeof(float));
-    memset(x->fftOut, 0, (size_t)(x->halfSize + 1) * sizeof(fftwf_complex));
+    memset(x->fftOut, 0, (size_t)(x->halfSize + 1) * sizeof(fftw_complex));
 
-    x->fftPlan = fftwf_plan_dft_r2c_1d(x->fftSize, x->fftIn, x->fftOut, FFTW_ESTIMATE);
-    x->ifftPlan = fftwf_plan_dft_c2r_1d(x->fftSize, x->fftOut, x->fftIn, FFTW_ESTIMATE);
+    x->fftPlan = fftw_plan_dft_r2c_1d(x->fftSize, x->fftIn, x->fftOut, FFTW_ESTIMATE);
+    x->ifftPlan = fftw_plan_dft_c2r_1d(x->fftSize, x->fftOut, x->fftIn, FFTW_ESTIMATE);
     if (!x->fftPlan || !x->ifftPlan) {
         if (x->fftPlan)
-            fftwf_destroy_plan(x->fftPlan);
+            fftw_destroy_plan(x->fftPlan);
         if (x->ifftPlan)
-            fftwf_destroy_plan(x->ifftPlan);
-        fftwf_free(x->fftIn);
-        fftwf_free(x->fftOut);
+            fftw_destroy_plan(x->ifftPlan);
+        fftw_free(x->fftIn);
+        fftw_free(x->fftOut);
         x->fftPlan = NULL;
         x->ifftPlan = NULL;
         x->fftIn = NULL;
@@ -398,7 +398,7 @@ static t_int *xfreeze_perform(t_int *w) {
 
         for (int i = 0; i < x->fftSize; ++i)
             x->fftIn[i] = x->analysisBuffer[i] * x->window[i];
-        fftwf_execute(x->fftPlan);
+        fftw_execute(x->fftPlan);
 
         if (!x->freeze) {
             if (useMatrix && matrixVec) {
@@ -490,7 +490,7 @@ static t_int *xfreeze_perform(t_int *w) {
             x->rotAccumIm[k] = accRe * stepIm + accIm * stepRe;
         }
 
-        fftwf_execute(x->ifftPlan);
+        fftw_execute(x->ifftPlan);
         for (int i = 0; i < x->fftSize; ++i) {
             const float sample = x->fftIn[i] * invFFT;
             x->olaBuffer[i] += sample * x->window[i] * olaScale;
@@ -667,13 +667,13 @@ static void *xfreeze_new(t_symbol *s, int argc, t_atom *argv) {
     if (!xfreeze_init_processing(x)) {
         pd_error(x, "[xfreeze~] failed to initialize processing buffers");
         if (x->fftPlan)
-            fftwf_destroy_plan(x->fftPlan);
+            fftw_destroy_plan(x->fftPlan);
         if (x->ifftPlan)
-            fftwf_destroy_plan(x->ifftPlan);
+            fftw_destroy_plan(x->ifftPlan);
         if (x->fftIn)
-            fftwf_free(x->fftIn);
+            fftw_free(x->fftIn);
         if (x->fftOut)
-            fftwf_free(x->fftOut);
+            fftw_free(x->fftOut);
         x->fftPlan = NULL;
         x->ifftPlan = NULL;
         x->fftIn = NULL;
@@ -684,13 +684,13 @@ static void *xfreeze_new(t_symbol *s, int argc, t_atom *argv) {
     if (!xfreeze_alloc_frames(x, x->numFrames)) {
         pd_error(x, "[xfreeze~] failed to allocate frame buffers");
         if (x->fftPlan)
-            fftwf_destroy_plan(x->fftPlan);
+            fftw_destroy_plan(x->fftPlan);
         if (x->ifftPlan)
-            fftwf_destroy_plan(x->ifftPlan);
+            fftw_destroy_plan(x->ifftPlan);
         if (x->fftIn)
-            fftwf_free(x->fftIn);
+            fftw_free(x->fftIn);
         if (x->fftOut)
-            fftwf_free(x->fftOut);
+            fftw_free(x->fftOut);
         xfreeze_free_processing(x);
         x->fftPlan = NULL;
         x->ifftPlan = NULL;
@@ -706,13 +706,13 @@ static void *xfreeze_new(t_symbol *s, int argc, t_atom *argv) {
 // ─────────────────────────────────────
 static void xfreeze_free(t_xfreeze *x) {
     if (x->fftPlan)
-        fftwf_destroy_plan(x->fftPlan);
+        fftw_destroy_plan(x->fftPlan);
     if (x->ifftPlan)
-        fftwf_destroy_plan(x->ifftPlan);
+        fftw_destroy_plan(x->ifftPlan);
     if (x->fftIn)
-        fftwf_free(x->fftIn);
+        fftw_free(x->fftIn);
     if (x->fftOut)
-        fftwf_free(x->fftOut);
+        fftw_free(x->fftOut);
     xfreeze_free_processing(x);
     xfreeze_free_frames(x);
 }
