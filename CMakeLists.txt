@@ -97,7 +97,7 @@ pd_add_external(
     xconv~
     "${CMAKE_CURRENT_SOURCE_DIR}/src/fft/xconvolve~.cpp"
     LINK_LIBRARIES
-    fftw3f)
+    fftw3)
 
 # array
 pd_add_external(a.rotate "${CMAKE_CURRENT_SOURCE_DIR}/src/arrays/a.rotate.cpp")
@@ -213,6 +213,11 @@ target_include_directories(gfreeze_tilde PRIVATE ${CMAKE_BINARY_DIR}/fftw-3.3.10
 # include_directories(${CMAKE_BINARY_DIR}/)
 pd_add_external(xclick~ "${CMAKE_CURRENT_SOURCE_DIR}/src/utilities/xclick~.cpp")
 pd_add_external(xcurve~ "${CMAKE_CURRENT_SOURCE_DIR}/src/utilities/xcurve~.cpp")
+set_target_properties(
+    xcurve_tilde
+    PROPERTIES CXX_STANDARD 17
+               CXX_STANDARD_REQUIRED ON
+               CXX_EXTENSIONS OFF)
 
 set(NW_GVERB_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/src/reverb/nw.gverb_tilde.cpp"
                      "${CMAKE_CURRENT_SOURCE_DIR}/src/reverb/reverb_bb.cpp")

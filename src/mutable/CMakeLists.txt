@@ -50,16 +50,9 @@ add_library(elements STATIC ${ELEMENTS_SOURCES})
 target_compile_definitions(elements PUBLIC TEST=1 _USE_MATH_DEFINES=1)
 set_target_properties(elements PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
-# ---- Include paths (VPATH equivalent) ----
-target_include_directories(
-    elements
-    PRIVATE ${eurorack_SOURCE_DIR}
-            ${eurorack_SOURCE_DIR}/elements
-            ${eurorack_SOURCE_DIR}/elements/dsp
-            ${eurorack_SOURCE_DIR}/elements/test
-            ${eurorack_SOURCE_DIR}/stmlib
-            ${eurorack_SOURCE_DIR}/stmlib/dsp
-            ${eurorack_SOURCE_DIR}/stmlib/utils)
+# Headers use paths relative to the repository root. Adding elements/dsp would
+# shadow the standard <string.h> with elements/dsp/string.h on macOS.
+target_include_directories(elements PRIVATE ${eurorack_SOURCE_DIR})
 
 # ---- Compile definitions ----
 target_compile_definitions(elements PRIVATE TEST)
