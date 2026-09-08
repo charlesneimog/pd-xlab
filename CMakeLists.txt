@@ -97,7 +97,7 @@ pd_add_external(
     xconv~
     "${CMAKE_CURRENT_SOURCE_DIR}/src/fft/xconvolve~.cpp"
     LINK_LIBRARIES
-    fftw3)
+    fftw3f)
 
 # array
 pd_add_external(a.rotate "${CMAKE_CURRENT_SOURCE_DIR}/src/arrays/a.rotate.cpp")
@@ -226,6 +226,11 @@ pd_add_external(
 cpmaddpackage("gh:schellingb/TinySoundFont#main")
 pd_add_external(tsf~ "${CMAKE_CURRENT_SOURCE_DIR}/src/synth/tsf~.cpp")
 target_include_directories(tsf_tilde PRIVATE ${TinySoundFont_SOURCE_DIR}/)
+set_target_properties(
+    tsf_tilde
+    PROPERTIES CXX_STANDARD 17
+               CXX_STANDARD_REQUIRED ON
+               CXX_EXTENSIONS OFF)
 
 # Single objects maintained as part of xlab.
 if(NOT EMSCRIPTEN)
