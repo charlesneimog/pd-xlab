@@ -97,7 +97,7 @@ pd_add_external(
     xconv~
     "${CMAKE_CURRENT_SOURCE_DIR}/src/fft/xconvolve~.cpp"
     LINK_LIBRARIES
-    fftw3f)
+    fftw3)
 
 # array
 pd_add_external(a.rotate "${CMAKE_CURRENT_SOURCE_DIR}/src/arrays/a.rotate.cpp")
