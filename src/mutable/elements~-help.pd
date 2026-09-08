@@ -1,4 +1,4 @@
-#N canvas 0 0 1299 1132 10;
+#N canvas 0 0 524 532 10;
 #X declare -lib xlab;
 #X declare -path ./../.build;
 #X obj 229 49 declare -lib xlab;

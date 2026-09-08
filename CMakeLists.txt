@@ -105,12 +105,59 @@ pd_add_external(a.sum "${CMAKE_CURRENT_SOURCE_DIR}/src/arrays/a.sum.cpp")
 # manipulations
 pd_add_external(infinite.record~ "${CMAKE_CURRENT_SOURCE_DIR}/src/utilities/infinite.record.cpp")
 pd_add_external(fdn~ "${CMAKE_CURRENT_SOURCE_DIR}/src/reverb/fdn~.cpp")
-pd_add_external(besseldrum~ "${CMAKE_CURRENT_SOURCE_DIR}/src/lab/besseldrum~.cpp")
-set_target_properties(besseldrum_tilde PROPERTIES CXX_STANDARD 17 CXX_STANDARD_REQUIRED ON
-                                                  CXX_EXTENSIONS OFF)
 
+# instruments
+pd_add_external(besseldrum~ "${CMAKE_CURRENT_SOURCE_DIR}/src/instruments/besseldrum~.cpp")
+set_target_properties(
+    besseldrum_tilde
+    PROPERTIES CXX_STANDARD 17
+               CXX_STANDARD_REQUIRED ON
+               CXX_EXTENSIONS OFF)
+
+# ╭──────────────────────────────────────╮
+# │                 stk                  │
+# ╰──────────────────────────────────────╯
+set(BUILD_SHARED
+    OFF
+    CACHE BOOL "" FORCE)
+set(BUILD_STATIC
+    ON
+    CACHE BOOL "" FORCE)
+set(COMPILE_PROJECTS
+    OFF
+    CACHE BOOL "" FORCE)
+set(REALTIME
+    OFF
+    CACHE BOOL "" FORCE)
+set(INSTALL_HEADERS
+    OFF
+    CACHE BOOL "" FORCE)
+
+cpmaddpackage("gh:thestk/stk#master")
+
+if(TARGET stk)
+    set_target_properties(stk PROPERTIES POSITION_INDEPENDENT_CODE ON)
+    if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+        target_compile_definitions(stk PRIVATE __OS_LINUX__)
+    elseif(APPLE)
+        target_compile_definitions(stk PRIVATE __OS_MACOSX__)
+    elseif(WIN32)
+        target_compile_definitions(stk PRIVATE __OS_WINDOWS__)
+    endif()
+endif()
+
+pd_add_external(
+    clarinet~
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/instruments/clarinet~.cpp"
+    LINK_LIBRARIES
+    stk)
+
+target_include_directories(clarinet_tilde PRIVATE "${stk_SOURCE_DIR}/include")
+
+# ╭──────────────────────────────────────╮
+# │                Reverb                │
+# ╰──────────────────────────────────────╯
 cpmaddpackage("gh:PelleJuul/zita-rev1#master")
-
 add_library(zitarev1 STATIC "${zita-rev1_SOURCE_DIR}/source/pareq.cpp;${zita-rev1_SOURCE_DIR}/source/reverb.cpp")
 set_target_properties(zitarev1 PROPERTIES POSITION_INDEPENDENT_CODE ON)
 target_include_directories(zitarev1 PUBLIC "${zita-rev1_SOURCE_DIR}/source")
@@ -205,21 +252,18 @@ message(STATUS "dddd file: ${DDDD_LUA}")
 # ╰──────────────────────────────────────╯
 
 if(IAMCHARLES)
-    # Sources that still need to be moved into pd-xlab.
-    add_subdirectory(../pd-stk ${CMAKE_BINARY_DIR}/pd-stk)
-    add_subdirectory(../pd-lua ${CMAKE_BINARY_DIR}/pd-lua)
     add_subdirectory(../pd-orchidea ${CMAKE_BINARY_DIR}/pd-orchidea)
-
-    # Packages intentionally kept outside pd-xlab.
-    add_subdirectory(../py4pd ${CMAKE_BINARY_DIR}/py4pd)
     add_subdirectory(../pd-upic ${CMAKE_BINARY_DIR}/pd-upic)
     add_subdirectory(../pd-bhack ${CMAKE_BINARY_DIR}/pd-bhack)
+
     if(NOT EMSCRIPTEN)
         add_subdirectory(../p2p ${CMAKE_BINARY_DIR}/p2p)
+        add_subdirectory(../py4pd ${CMAKE_BINARY_DIR}/py4pd)
+        add_subdirectory(../pd-lua ${CMAKE_BINARY_DIR}/pd-lua)
     endif()
+
 else()
     # Temporary package fallbacks until these sources are moved into pd-xlab.
-    cpmaddpackage("gh:charlesneimog/pd-stk#main")
     cpmaddpackage("gh:charlesneimog/pd-orchidea#main")
     cpmaddpackage("gh:charlesneimog/pd-upic#main")
     cpmaddpackage("gh:EL-LOCUS-SOLUS/pd-bhack#main")
