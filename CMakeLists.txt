@@ -246,7 +246,9 @@ add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/src/single/mar~" "${CMAKE_BINARY_D
 add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/src/single/dragonfly~" "${CMAKE_BINARY_DIR}/single/dragonfly")
 
 # Collections maintained as part of xlab.
-add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/src/mutable" "${CMAKE_BINARY_DIR}/mutable")
+if(NOT APPLE)
+    add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/src/mutable" "${CMAKE_BINARY_DIR}/mutable")
+endif()
 
 if(NOT TARGET onsetsds_tilde)
     pd_add_external(onsetsds~
@@ -343,10 +345,7 @@ add_dependencies(
     mar_tilde
     dragonfly_tilde
     besseldrum_tilde
-    # mutable
-    elements_tilde
-    rings_tilde
-    # synth
+    # # mutable elements_tilde rings_tilde synth
     tsf_tilde)
 
 if(NOT EMSCRIPTEN)
