@@ -1,186 +1,186 @@
 ---
 name: Compile PureData Object
 on:
-  push:
-    branches: [main]
-#╭──────────────────────────────────────╮
-#│  Uncomment if you want to trigger a  │
-#│               release                │
-#╰──────────────────────────────────────╯
-  workflow_dispatch:
-    inputs:
-      publish_release:
-        description: Publish a GitHub Release using LIBVERSION after build
-        required: false
-        type: boolean
-        default: false
+    push:
+        branches: [main]
+    #╭──────────────────────────────────────╮
+    #│  Uncomment if you want to trigger a  │
+    #│               release                │
+    #╰──────────────────────────────────────╯
+    workflow_dispatch:
+        inputs:
+            publish_release:
+                description: Publish a GitHub Release using LIBVERSION after build
+                required: false
+                type: boolean
+                default: false
 env:
-  LIBNAME: xlab
-  LIBVERSION: 0.1.0
-  PYVERSION: "3.13"
+    LIBNAME: xlab
+    LIBVERSION: 0.1.0
+    PYVERSION: "3.13"
 permissions:
-  contents: write
+    contents: write
 jobs:
-  macos:
-    runs-on: ${{ matrix.machines }}
-    strategy:
-      matrix:
-        precision: [32, 64]
-        machines: [macos-latest]
-    steps:
-      - uses: actions/setup-python@v5
-        with:
-          python-version: ${{env.PYVERSION}}
-      - uses: actions/checkout@v4
-        with:
-          submodules: recursive
-          fetch-depth: 0
-      - name: Install PureData and Deps
-        run: |
-          brew install pd
-      - name: Build
-        run: |
-          cmake . -B build -DPD_OUTPUT_PATH="${{ github.workspace }}/xlab" -DCMAKE_BUILD_TYPE=Release -DCMAKE_OSX_ARCHITECTURES="x86_64;arm64" -DPD_FLOATSIZE=${{ matrix.precision }} -DPYVERSION=${{env.PYVERSION}}
-          cmake --build build -j4
-          #cmake --install build
-      - name: Upload Object
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{env.LIBNAME}}-${{env.LIBVERSION}}-${{matrix.machines}}-universal-pd${{matrix.precision}}
-          path: ${{ github.workspace }}/${{ env.LIBNAME }}
-  linux-build:
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        arch: [amd64] #, arm, aarch64]
-        precision: [32, 64]
-    steps:
-      - uses: actions/setup-python@v5
-        with:
-          python-version: 3.13
-      - uses: actions/checkout@v4
-        with:
-          submodules: recursive
-          fetch-depth: 1
-      - name: PureData Sources
-        run: |
-          sudo apt update
-          sudo add-apt-repository ppa:pure-data/pure-data -y
-          sudo apt install puredata -y
-          sudo apt install libpipewire-0.3-dev -y
-          sudo apt install libfreetype6-dev libx11-dev libxext-dev libxinerama-dev libxcursor-dev libxrandr-dev libxcomposite-dev libglib2.0-dev libgtk-3-dev libasound2-dev libpulse-dev libcurl4-openssl-dev libssl-dev libfftw3-dev libsndfile1-dev libsqlite3-dev libz-dev -y
-      - name: Install compiler
-        id: compiler
-        run: |
-          arch=""
-          test "${{ matrix.arch }}" != "aarch64" || arch="aarch64-linux-gnu"
-          test "${{ matrix.arch }}" != "arm" || arch="arm-linux-gnueabihf"
-          if test -n "${arch}"; then
-            sudo apt-get install -y gcc-${arch} g++-${arch}
-            echo "arch=${arch}" >> $GITHUB_OUTPUT
-          fi
-      - name: Configure
-        run: |
-          arch="${{ steps.compiler.outputs.arch }}"
-          openblas_target=""
-          case "${{ matrix.arch }}" in
-            aarch64) openblas_target="ARMV8" ;;
-            arm) openblas_target="ARMV7" ;;
-          esac
-          cmake . -B build \
-            -DPD_FLOATSIZE=${{ matrix.precision }} \
-            -DPD_OUTPUT_PATH="${{ github.workspace }}/xlab" \
-            -DCMAKE_BUILD_TYPE=Release \
-            -DPYVERSION=${{ env.PYVERSION }} \
-            ${arch:+-DCMAKE_SYSTEM_NAME=Linux -DCMAKE_SYSTEM_PROCESSOR=${{ matrix.arch }}} \
-            ${arch:+-DCMAKE_C_COMPILER=${arch}-gcc -DCMAKE_CXX_COMPILER=${arch}-g++} \
-            ${arch:+${openblas_target:+-DTARGET=${openblas_target}}}
-      - name: Build Object
-        run: |
-          cmake --build build -- -j$(nproc)
-          #cmake --install build
-      - name: Upload Object
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{env.LIBNAME}}-${{env.LIBVERSION}}-ubuntu-latest-${{matrix.arch}}-pd${{matrix.precision}}
-          path: ${{ github.workspace }}/${{ env.LIBNAME }}
-  windows-build:
-    runs-on: windows-latest
-    strategy:
-      matrix:
-        compiler: [mingw]
-        arch: [amd64]
-        precision: [32, 64]
-    steps:
-      - uses: actions/setup-python@v5
-        with:
-          python-version: 3.13
-      - name: Checkout repository
-        uses: actions/checkout@v4
-        with:
-          submodules: recursive
-          fetch-depth: 0
-      - if: matrix.compiler == 'mingw'
-        name: Set up Msys2
-        uses: msys2/setup-msys2@v2
-        with:
-          msystem: mingw64
-          install: make mingw-w64-x86_64-gcc mingw64/mingw-w64-x86_64-cmake mingw-w64-x86_64-gcc-fortran
-          update: false
-      - name: Install PureData Float 32
-        if: matrix.precision == '32'
-        run: |
-          winget install -e --id MillerPuckette.PureData --accept-source-agreements
-      - name: Install PureData Float 64
-        if: matrix.precision == '64'
-        run: |
-          winget install -e --id MillerPuckette.Pd64 --accept-source-agreements
-      - name: Configure and build Mingw
-        shell: msys2 {0}
-        if: matrix.compiler == 'mingw'
-        run: |
-          PD_OUT="$(cygpath -u "$GITHUB_WORKSPACE"/xlab)"
-          cmake . -B build -DPD_FLOATSIZE=${{ matrix.precision }} -DPD_OUTPUT_PATH="$PD_OUT" -DCMAKE_BUILD_TYPE=Release -DPYVERSION=${{ env.PYVERSION }} -DTARGET=CORE2
-          cmake --build build --parallel
-          #cmake --install build
-      - name: Upload
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{env.LIBNAME}}-${{env.LIBVERSION}}-windows-latest-${{matrix.arch}}-pd${{matrix.precision}}
-          path: ${{ github.workspace }}/${{ env.LIBNAME }}
-#╭──────────────────────────────────────╮
-#│   Here an example to how publish a   │
-#│   release, uncomment the input or    │
-#│            remove the if             │
-#╰──────────────────────────────────────╯
-  publish-release:
-    if: ${{ github.event.inputs.publish_release == 'true' }}
-    needs: [macos, linux-build, windows-build]
-    runs-on: ubuntu-latest
-    steps:
-      - name: Download all artifacts
-        uses: actions/download-artifact@v4
-        with:
-          path: artifacts
-      - name: Create unified onnx directory and archive
-        run: |
-          set -e
-          TOPDIR="$LIBNAME"
-          mkdir -p "$TOPDIR"
-          for artifact_dir in artifacts/*; do
-            [ -d "$artifact_dir" ] || continue
-            cp -r "$artifact_dir/"* "$TOPDIR/"
-          done
-          ls -1 "$TOPDIR"
-          ZIP_NAME="${LIBNAME}-${LIBVERSION}-all-platforms.zip"
-          zip -r "$ZIP_NAME" "$TOPDIR"
-      - name: Create / Update GitHub Release
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: v${{ env.LIBVERSION }}
-          name: ${{ env.LIBNAME }} v${{ env.LIBVERSION }}
-          target_commitish: ${{ github.sha }}
-          files: |
-            ${{ env.LIBNAME }}-${{ env.LIBVERSION }}-all-platforms.zip
-          draft: true
-          prerelease: false
+    macos:
+        runs-on: ${{ matrix.machines }}
+        strategy:
+            matrix:
+                precision: [32]
+                machines: [macos-latest]
+        steps:
+            - uses: actions/setup-python@v5
+              with:
+                  python-version: ${{env.PYVERSION}}
+            - uses: actions/checkout@v4
+              with:
+                  submodules: recursive
+                  fetch-depth: 0
+            - name: Install PureData and Deps
+              run: |
+                  brew install pd
+            - name: Build
+              run: |
+                  cmake . -B build -DPD_OUTPUT_PATH="${{ github.workspace }}/xlab" -DCMAKE_BUILD_TYPE=Release -DCMAKE_OSX_ARCHITECTURES="x86_64;arm64" -DPD_FLOATSIZE=${{ matrix.precision }} -DPYVERSION=${{env.PYVERSION}}
+                  cmake --build build -j4
+                  #cmake --install build
+            - name: Upload Object
+              uses: actions/upload-artifact@v4
+              with:
+                  name: ${{env.LIBNAME}}-${{env.LIBVERSION}}-${{matrix.machines}}-universal-pd${{matrix.precision}}
+                  path: ${{ github.workspace }}/${{ env.LIBNAME }}
+    linux-build:
+        runs-on: ubuntu-latest
+        strategy:
+            matrix:
+                arch: [amd64] #, arm, aarch64]
+                precision: [32]
+        steps:
+            - uses: actions/setup-python@v5
+              with:
+                  python-version: 3.13
+            - uses: actions/checkout@v4
+              with:
+                  submodules: recursive
+                  fetch-depth: 1
+            - name: PureData Sources
+              run: |
+                  sudo apt update
+                  sudo add-apt-repository ppa:pure-data/pure-data -y
+                  sudo apt install puredata -y
+                  sudo apt install libpipewire-0.3-dev -y
+                  sudo apt install libfreetype6-dev libx11-dev libxext-dev libxinerama-dev libxcursor-dev libxrandr-dev libxcomposite-dev libglib2.0-dev libgtk-3-dev libasound2-dev libpulse-dev libcurl4-openssl-dev libssl-dev libfftw3-dev libsndfile1-dev libsqlite3-dev libz-dev -y
+            - name: Install compiler
+              id: compiler
+              run: |
+                  arch=""
+                  test "${{ matrix.arch }}" != "aarch64" || arch="aarch64-linux-gnu"
+                  test "${{ matrix.arch }}" != "arm" || arch="arm-linux-gnueabihf"
+                  if test -n "${arch}"; then
+                    sudo apt-get install -y gcc-${arch} g++-${arch}
+                    echo "arch=${arch}" >> $GITHUB_OUTPUT
+                  fi
+            - name: Configure
+              run: |
+                  arch="${{ steps.compiler.outputs.arch }}"
+                  openblas_target=""
+                  case "${{ matrix.arch }}" in
+                    aarch64) openblas_target="ARMV8" ;;
+                    arm) openblas_target="ARMV7" ;;
+                  esac
+                  cmake . -B build \
+                    -DPD_FLOATSIZE=${{ matrix.precision }} \
+                    -DPD_OUTPUT_PATH="${{ github.workspace }}/xlab" \
+                    -DCMAKE_BUILD_TYPE=Release \
+                    -DPYVERSION=${{ env.PYVERSION }} \
+                    ${arch:+-DCMAKE_SYSTEM_NAME=Linux -DCMAKE_SYSTEM_PROCESSOR=${{ matrix.arch }}} \
+                    ${arch:+-DCMAKE_C_COMPILER=${arch}-gcc -DCMAKE_CXX_COMPILER=${arch}-g++} \
+                    ${arch:+${openblas_target:+-DTARGET=${openblas_target}}}
+            - name: Build Object
+              run: |
+                  cmake --build build -- -j$(nproc)
+                  #cmake --install build
+            - name: Upload Object
+              uses: actions/upload-artifact@v4
+              with:
+                  name: ${{env.LIBNAME}}-${{env.LIBVERSION}}-ubuntu-latest-${{matrix.arch}}-pd${{matrix.precision}}
+                  path: ${{ github.workspace }}/${{ env.LIBNAME }}
+    windows-build:
+        runs-on: windows-latest
+        strategy:
+            matrix:
+                compiler: [mingw]
+                arch: [amd64]
+                precision: [32]
+        steps:
+            - uses: actions/setup-python@v5
+              with:
+                  python-version: 3.13
+            - name: Checkout repository
+              uses: actions/checkout@v4
+              with:
+                  submodules: recursive
+                  fetch-depth: 0
+            - if: matrix.compiler == 'mingw'
+              name: Set up Msys2
+              uses: msys2/setup-msys2@v2
+              with:
+                  msystem: mingw64
+                  install: make mingw-w64-x86_64-gcc mingw64/mingw-w64-x86_64-cmake mingw-w64-x86_64-gcc-fortran
+                  update: false
+            - name: Install PureData Float 32
+              if: matrix.precision == '32'
+              run: |
+                  winget install -e --id MillerPuckette.PureData --accept-source-agreements
+            - name: Install PureData Float 64
+              if: matrix.precision == '64'
+              run: |
+                  winget install -e --id MillerPuckette.Pd64 --accept-source-agreements
+            - name: Configure and build Mingw
+              shell: msys2 {0}
+              if: matrix.compiler == 'mingw'
+              run: |
+                  PD_OUT="$(cygpath -u "$GITHUB_WORKSPACE"/xlab)"
+                  cmake . -B build -DPD_FLOATSIZE=${{ matrix.precision }} -DPD_OUTPUT_PATH="$PD_OUT" -DCMAKE_BUILD_TYPE=Release -DPYVERSION=${{ env.PYVERSION }} -DTARGET=CORE2
+                  cmake --build build --parallel
+                  #cmake --install build
+            - name: Upload
+              uses: actions/upload-artifact@v4
+              with:
+                  name: ${{env.LIBNAME}}-${{env.LIBVERSION}}-windows-latest-${{matrix.arch}}-pd${{matrix.precision}}
+                  path: ${{ github.workspace }}/${{ env.LIBNAME }}
+    #╭──────────────────────────────────────╮
+    #│   Here an example to how publish a   │
+    #│   release, uncomment the input or    │
+    #│            remove the if             │
+    #╰──────────────────────────────────────╯
+    publish-release:
+        if: ${{ github.event.inputs.publish_release == 'true' }}
+        needs: [macos, linux-build, windows-build]
+        runs-on: ubuntu-latest
+        steps:
+            - name: Download all artifacts
+              uses: actions/download-artifact@v4
+              with:
+                  path: artifacts
+            - name: Create unified onnx directory and archive
+              run: |
+                  set -e
+                  TOPDIR="$LIBNAME"
+                  mkdir -p "$TOPDIR"
+                  for artifact_dir in artifacts/*; do
+                    [ -d "$artifact_dir" ] || continue
+                    cp -r "$artifact_dir/"* "$TOPDIR/"
+                  done
+                  ls -1 "$TOPDIR"
+                  ZIP_NAME="${LIBNAME}-${LIBVERSION}-all-platforms.zip"
+                  zip -r "$ZIP_NAME" "$TOPDIR"
+            - name: Create / Update GitHub Release
+              uses: softprops/action-gh-release@v2
+              with:
+                  tag_name: v${{ env.LIBVERSION }}
+                  name: ${{ env.LIBNAME }} v${{ env.LIBVERSION }}
+                  target_commitish: ${{ github.sha }}
+                  files: |
+                      ${{ env.LIBNAME }}-${{ env.LIBVERSION }}-all-platforms.zip
+                  draft: true
+                  prerelease: false

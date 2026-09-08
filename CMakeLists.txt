@@ -305,7 +305,8 @@ find_package(Python3 REQUIRED COMPONENTS Interpreter)
 
 add_custom_target(
     edit_files
-    COMMAND ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/resources/edit_patches.py ${CMAKE_BINARY_DIR}/xlab
+    COMMAND ${CMAKE_COMMAND} -E make_directory "${CMAKE_BINARY_DIR}/xlab"
+    COMMAND "${Python3_EXECUTABLE}" "${CMAKE_SOURCE_DIR}/resources/edit_patches.py" "${CMAKE_BINARY_DIR}/xlab"
     COMMENT "Editing generated files with Python")
 
 add_dependencies(
