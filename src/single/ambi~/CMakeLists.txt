@@ -58,3 +58,9 @@ target_include_directories(ambi_tilde PRIVATE "${libspatialaudio_BINARY_DIR}/inc
 
 pd_add_datafile(ambi~ "${CMAKE_CURRENT_SOURCE_DIR}/ambi~-help.pd")
 pd_add_datafile(ambi~ "${CMAKE_CURRENT_SOURCE_DIR}/nh906.sofa")
+
+set_target_properties(
+    ambi_tilde
+    PROPERTIES CXX_STANDARD 17
+               CXX_STANDARD_REQUIRED ON
+               CXX_EXTENSIONS OFF)
