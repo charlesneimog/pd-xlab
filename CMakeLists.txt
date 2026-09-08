@@ -109,7 +109,7 @@ pd_add_external(infinite.record~ "${CMAKE_CURRENT_SOURCE_DIR}/src/utilities/infi
 pd_add_external(fdn~ "${CMAKE_CURRENT_SOURCE_DIR}/src/reverb/fdn~.cpp")
 
 # instruments
-find_package(Boost REQUIRED)
+find_package(Boost CONFIG REQUIRED)
 pd_add_external(besseldrum~ "${CMAKE_CURRENT_SOURCE_DIR}/src/instruments/besseldrum~.cpp")
 set_target_properties(
     besseldrum_tilde
