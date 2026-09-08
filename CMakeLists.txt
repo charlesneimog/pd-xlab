@@ -50,7 +50,7 @@ set(BUILD_TESTS
     OFF
     CACHE BOOL "" FORCE)
 set(ENABLE_FLOAT
-    ON
+    OFF
     CACHE BOOL "Build single-precision (fftw3f)" FORCE)
 set(ENABLE_LONG_DOUBLE
     OFF
@@ -82,8 +82,8 @@ get_property(
     DIRECTORY ${CMAKE_BINARY_DIR}/fftw-3.3.10
     PROPERTY BUILDSYSTEM_TARGETS)
 
-set_target_properties(fftw3f PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
-set_target_properties(fftw3f PROPERTIES POSITION_INDEPENDENT_CODE ON)
+set_target_properties(fftw3 PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
+set_target_properties(fftw3 PROPERTIES POSITION_INDEPENDENT_CODE ON)
 include_directories("${CMAKE_BINARY_DIR}/fftw-3.3.10/api/")
 
 # ╭──────────────────────────────────────╮
@@ -200,13 +200,13 @@ pd_add_external(
     xfreeze~
     "${CMAKE_CURRENT_SOURCE_DIR}/src/fft/xfreeze~.cpp"
     LINK_LIBRARIES
-    fftw3f)
+    fftw3)
 
 pd_add_external(
     gfreeze~
     "${CMAKE_CURRENT_SOURCE_DIR}/src/fft/gfreeze~.cpp"
     LINK_LIBRARIES
-    fftw3f)
+    fftw3)
 
 target_include_directories(xfreeze_tilde PRIVATE ${CMAKE_BINARY_DIR}/fftw-3.3.10/api)
 target_include_directories(gfreeze_tilde PRIVATE ${CMAKE_BINARY_DIR}/fftw-3.3.10/api)
