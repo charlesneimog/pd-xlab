@@ -107,6 +107,11 @@ pd_add_external(a.sum "${CMAKE_CURRENT_SOURCE_DIR}/src/arrays/a.sum.cpp")
 # manipulations
 pd_add_external(infinite.record~ "${CMAKE_CURRENT_SOURCE_DIR}/src/utilities/infinite.record.cpp")
 pd_add_external(fdn~ "${CMAKE_CURRENT_SOURCE_DIR}/src/reverb/fdn~.cpp")
+set_target_properties(
+    fdn_tilde
+    PROPERTIES CXX_STANDARD 17
+               CXX_STANDARD_REQUIRED ON
+               CXX_EXTENSIONS OFF)
 
 # instruments
 find_package(Boost CONFIG REQUIRED)
