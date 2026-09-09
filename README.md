@@ -47,6 +47,16 @@ cmake --build build
 
 Compiled Pd objects and binaries will be available in the output directory (`build/xlab`).
 
+### Publish to Deken
+
+Set the repository's `DEKEN_PASSWORD` Actions secret for the `charlesneimog`
+Deken account and update `LIBVERSION` in
+`.github/workflows/cmake-multi-platform.yml` for the release. Run **Build and
+publish Pure Data package** manually with `publish_release` enabled. After all
+three platform builds succeed, the workflow merges their artifacts, uploads the
+package to Deken, and creates a draft GitHub Release containing the `.dek` package
+and the all-platforms ZIP. Normal pushes only build and upload Actions artifacts.
+
 ---
 
 ## 📜 License
