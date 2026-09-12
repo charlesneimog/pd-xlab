@@ -9,6 +9,10 @@ control smoothing settles.
 
 ## Hybrid sound-design layers (not equations from the paper)
 
+For evidence, limitations, and a calibration plan covering all seven materials,
+see [the material research audit](rain-material-research.md). The preset values
+are artistic coefficients, not measured material constants.
+
 The paper-derived impulse remains the initial impact. These additions give drops
 body and continuous rain texture without making occasional pitched notes dominate:
 
@@ -51,6 +55,12 @@ They do not require a cone waveform. The actual paper water model still does.
 Hybrid arrivals use exponential waiting times: `density` is the average drops
 per second, with natural clusters and gaps. A fixed `metro` sending bangs still
 produces fixed timing; use automatic density for irregular rain.
+
+Below 150 drops/s, new hybrid drops gradually use a shorter, quieter splash,
+a faster attack, and stronger surface resonances so isolated events
+have more body and less of a noise-envelope sound. The adjustment is strongest
+at density 0 (including manual bangs), fades smoothly to zero at 150, and leaves
+the dense mix unchanged. Layer controls still apply, including zero levels.
 
 Here the added resonances vary independently in tuning, damping and strength.
 Larger drops excite lower, shorter resonances. Above a 1 mm radius, a smooth

@@ -275,6 +275,34 @@ int main(int argc, char **argv) {
     }
     rain_trigger(one.get(), 0, true);
     assert(one->voices[0].rings[0].a1 != one->voices[1].rings[0].a1);
+    // Isolated sparse splashes have less exposed noise tail; dense drops keep
+    // the same waveform. Disable other layers to measure the splash itself.
+    for (double rate : {8000.0, 48000.0, 96000.0}) {
+        double previous_tail = -1;
+        std::vector<t_sample> dense_splash;
+        for (double density : {0.0, 50.0, 100.0, 150.0, 800.0}) {
+            auto drop = fresh();
+            sr(drop.get(), rate);
+            drop->hybrid = true;
+            drop->hybrid_mix = 1;
+            drop->impact = drop->impact_smooth = 0;
+            drop->tone = drop->tone_smooth = 0;
+            drop->bed = drop->bed_smooth = 0;
+            rain_density(drop.get(), density);
+            rain_trigger(drop.get(), 0, true);
+            rain_density(drop.get(), 0); // Render only the already-created drop.
+            auto output = render(drop.get(), int(rate * 0.1));
+            double tail = 0;
+            for (int i = int(rate * 0.005); i < int(output.left.size()); ++i)
+                tail += double(output.left[i]) * output.left[i];
+            assert(tail > 0 && tail >= previous_tail);
+            previous_tail = tail;
+            if (density == 150)
+                dense_splash = output.left;
+            if (density == 800)
+                assert(output.left == dense_splash);
+        }
+    }
     // Sparse automatic hybrid rain has clusters and gaps, and is seed-reproducible.
     one = fresh();
     two = fresh();

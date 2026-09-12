@@ -33,7 +33,20 @@ struct RainMaterial {
 };
 
 static constexpr RainMaterial RAIN_MATERIALS[] = {
-    {"ground", {470, 1130, 2190}, 1, 1, 1, 0.003, 0.0007, 0.8, 0, 0, 1, {1, 1, 1, 1, 1, 1}},
+    {
+        "ground",          // Material name
+        {470, 1130, 2190}, // Three resonance frequencies, in Hz
+        1,                 // Damping: multiplier of resonance decay time
+        1,                 // Tone gain: resonance amplitude multiplier
+        1,                 // Splash gain: noise splash amplitude multiplier
+        0.003,             // Splash decay time: 3 ms
+        0.0007,            // Attack time: 0.7 ms
+        0.8,               // Splash low-pass cutoff multiplier
+        0,                 // Splash high-pass cutoff, in Hz
+        0,                 // Crinkle amount
+        1,                 // Initial impact amplitude multiplier
+        {1, 1, 1, 1, 1, 1} // Background noise weights, low to high frequencies
+    },
     {"leaf",
      {1300, 2700, 4300},
      0.7,
@@ -107,8 +120,9 @@ static constexpr RainMaterial RAIN_MATERIALS[] = {
      0.65,
      {0.3, 0.55, 0.9, 1.1, 1, 0.7}},
 };
-constexpr int MATERIAL_COUNT = sizeof(RAIN_MATERIALS) / sizeof(RAIN_MATERIALS[0]);
 
+// ─────────────────────────────────────
+constexpr int MATERIAL_COUNT = sizeof(RAIN_MATERIALS) / sizeof(RAIN_MATERIALS[0]);
 struct RainVoice {
     double hard[MAX_KERNEL], water[MAX_KERNEL];
     int hard_size, water_size, hard_start, water_start, age, end;
@@ -121,6 +135,7 @@ struct RainVoice {
     uint32_t noise_rng;
 };
 
+// ─────────────────────────────────────
 struct t_rain_tilde {
     t_object x_obj;
     t_outlet *out;
@@ -395,11 +410,16 @@ static void rain_trigger(t_rain_tilde *x, double arrival, bool manual = false) {
         // it is not a calibrated pressure/energy relationship from the paper.
         double body = pulse_area * 48000 * v.amplitude * 5 * v.size_gain;
         double size = std::min(1.0, a / 0.003);
+        // Sparse drops expose the noise envelope. Give them a shorter splash
+        // and more resonant body, fading smoothly to the original mix at 150/s.
+        // This is event-level sound design; layer controls still apply.
+        double sparse = 1 - std::min(1.0, x->density / 150);
+        sparse = sparse * sparse * (3 - 2 * sparse);
         v.noise_rng = static_cast<uint32_t>(rain_texture_random(x->texture_rng) * 4294967296.0);
         if (!v.noise_rng)
             v.noise_rng = 1;
-        v.splash_env = body * material.splash_gain;
-        double splash_seconds = material.splash_seconds * (1 + 1.667 * size);
+        v.splash_env = body * material.splash_gain * (1 - 0.35 * sparse);
+        double splash_seconds = material.splash_seconds * (1 + 1.667 * size) * (1 - 0.6 * sparse);
         v.splash_decay = std::exp(-1 / (splash_seconds * x->sample_rate));
         double cutoff = (1500 + 6500 * x->brightness_smooth) * material.cutoff;
         v.splash_coeff =
@@ -408,7 +428,8 @@ static void rain_trigger(t_rain_tilde *x, double arrival, bool manual = false) {
             std::exp(-2 * PI * std::min(material.highpass, 0.45 * x->sample_rate) / x->sample_rate);
         v.crinkle = material.crinkle;
         v.flutter_coeff = std::exp(-2 * PI * 900 / x->sample_rate);
-        v.attack_step = 1 / std::max(1.0, material.attack_seconds * x->sample_rate);
+        v.attack_step =
+            1 / std::max(1.0, material.attack_seconds * (1 - 0.5 * sparse) * x->sample_rate);
         // Here I vary each drop's resonances instead of repeating a nearly
         // fixed chord. Larger drops emphasize lower, more damped modes. These
         // frequency/decay distributions are perceptual choices, not paper math.
@@ -423,7 +444,7 @@ static void rain_trigger(t_rain_tilde *x, double arrival, bool manual = false) {
                 decay * (0.7 + 0.3 * rain_texture_random(x->texture_rng)) / (1 + 0.6 * k);
             mode_decay /= std::sqrt(std::max(1.0, a / 0.001));
             longest_decay = std::max(longest_decay, mode_decay);
-            double strength = body * material.tone_gain *
+            double strength = body * material.tone_gain * (1 + 1.5 * sparse) *
                               (0.45 + 0.35 * rain_texture_random(x->texture_rng)) / (1 + k);
             if (rain_texture_random(x->texture_rng) < 0.5)
                 strength = -strength;
@@ -750,18 +771,40 @@ static void rain_material(t_rain_tilde *x, t_symbol *name) {
 
 // ─────────────────────────────────────
 // Independent layer levels; clamps are UI limits, not paper equations.
-#define LAYER(name)                                                                                \
-    static void rain_##name(t_rain_tilde *x, t_floatarg value) {                                   \
-        if (std::isfinite(value))                                                                  \
-            x->name = std::max(0.0, std::min(double(value), 1.0));                                 \
-    }
-LAYER(impact)
-LAYER(splash)
-LAYER(tone)
-LAYER(plinks)
-LAYER(bed)
-LAYER(brightness)
-#undef LAYER
+static void rain_impact(t_rain_tilde *x, t_floatarg value) {
+    if (std::isfinite(value))
+        x->impact = std::max(0.0, std::min(double(value), 1.0));
+}
+
+// ─────────────────────────────────────
+static void rain_splash(t_rain_tilde *x, t_floatarg value) {
+    if (std::isfinite(value))
+        x->splash = std::max(0.0, std::min(double(value), 1.0));
+}
+
+// ─────────────────────────────────────
+static void rain_tone(t_rain_tilde *x, t_floatarg value) {
+    if (std::isfinite(value))
+        x->tone = std::max(0.0, std::min(double(value), 1.0));
+}
+
+// ─────────────────────────────────────
+static void rain_plinks(t_rain_tilde *x, t_floatarg value) {
+    if (std::isfinite(value))
+        x->plinks = std::max(0.0, std::min(double(value), 1.0));
+}
+
+// ─────────────────────────────────────
+static void rain_bed(t_rain_tilde *x, t_floatarg value) {
+    if (std::isfinite(value))
+        x->bed = std::max(0.0, std::min(double(value), 1.0));
+}
+
+// ─────────────────────────────────────
+static void rain_brightness(t_rain_tilde *x, t_floatarg value) {
+    if (std::isfinite(value))
+        x->brightness = std::max(0.0, std::min(double(value), 1.0));
+}
 
 // ─────────────────────────────────────
 static void rain_resonance(t_rain_tilde *x, t_floatarg value) {
@@ -854,35 +897,48 @@ extern "C" void rain_tilde_setup() {
                                  sizeof(t_rain_tilde), CLASS_DEFAULT, A_DEFFLOAT, 0);
     class_addbang(rain_tilde_class, reinterpret_cast<t_method>(rain_bang));
 
-#define METHOD(name, ...)                                                                          \
-    class_addmethod(rain_tilde_class, reinterpret_cast<t_method>(rain_##name), gensym(#name),      \
-                    __VA_ARGS__, 0)
-    METHOD(dsp, A_CANT);
-    METHOD(density, A_FLOAT);
-    METHOD(seed, A_FLOAT);
-    METHOD(radius, A_FLOAT, A_FLOAT);
-    METHOD(area, A_FLOAT, A_FLOAT);
-    METHOD(height, A_FLOAT);
-    METHOD(amplitude, A_FLOAT);
-    METHOD(gain, A_FLOAT);
-    METHOD(surface, A_SYMBOL);
-    METHOD(cone, A_FLOAT, A_FLOAT, A_FLOAT);
-    METHOD(pinch, A_SYMBOL, A_DEFFLOAT);
-    METHOD(air, A_FLOAT, A_FLOAT);
-    METHOD(model, A_SYMBOL);
-    METHOD(material, A_SYMBOL);
-    METHOD(impact, A_FLOAT);
-    METHOD(splash, A_FLOAT);
-    METHOD(tone, A_FLOAT);
-    METHOD(plinks, A_FLOAT);
-    METHOD(bed, A_FLOAT);
-    METHOD(brightness, A_FLOAT);
-    METHOD(resonance, A_FLOAT);
-#undef METHOD
+    class_addmethod(rain_tilde_class, reinterpret_cast<t_method>(rain_dsp), gensym("dsp"), A_CANT,
+                    0);
+    class_addmethod(rain_tilde_class, reinterpret_cast<t_method>(rain_density), gensym("density"),
+                    A_FLOAT, 0);
+    class_addmethod(rain_tilde_class, reinterpret_cast<t_method>(rain_seed), gensym("seed"),
+                    A_FLOAT, 0);
+    class_addmethod(rain_tilde_class, reinterpret_cast<t_method>(rain_radius), gensym("radius"),
+                    A_FLOAT, A_FLOAT, 0);
+    class_addmethod(rain_tilde_class, reinterpret_cast<t_method>(rain_area), gensym("area"),
+                    A_FLOAT, A_FLOAT, 0);
+    class_addmethod(rain_tilde_class, reinterpret_cast<t_method>(rain_height), gensym("height"),
+                    A_FLOAT, 0);
+    class_addmethod(rain_tilde_class, reinterpret_cast<t_method>(rain_amplitude),
+                    gensym("amplitude"), A_FLOAT, 0);
+    class_addmethod(rain_tilde_class, reinterpret_cast<t_method>(rain_gain), gensym("gain"),
+                    A_FLOAT, 0);
+    class_addmethod(rain_tilde_class, reinterpret_cast<t_method>(rain_surface), gensym("surface"),
+                    A_SYMBOL, 0);
+    class_addmethod(rain_tilde_class, reinterpret_cast<t_method>(rain_cone), gensym("cone"),
+                    A_FLOAT, A_FLOAT, A_FLOAT, 0);
+    class_addmethod(rain_tilde_class, reinterpret_cast<t_method>(rain_pinch), gensym("pinch"),
+                    A_SYMBOL, A_DEFFLOAT, 0);
+    class_addmethod(rain_tilde_class, reinterpret_cast<t_method>(rain_air), gensym("air"), A_FLOAT,
+                    A_FLOAT, 0);
+    class_addmethod(rain_tilde_class, reinterpret_cast<t_method>(rain_model), gensym("model"),
+                    A_SYMBOL, 0);
+    class_addmethod(rain_tilde_class, reinterpret_cast<t_method>(rain_material), gensym("material"),
+                    A_SYMBOL, 0);
+    class_addmethod(rain_tilde_class, reinterpret_cast<t_method>(rain_impact), gensym("impact"),
+                    A_FLOAT, 0);
+    class_addmethod(rain_tilde_class, reinterpret_cast<t_method>(rain_splash), gensym("splash"),
+                    A_FLOAT, 0);
+    class_addmethod(rain_tilde_class, reinterpret_cast<t_method>(rain_tone), gensym("tone"),
+                    A_FLOAT, 0);
+    class_addmethod(rain_tilde_class, reinterpret_cast<t_method>(rain_plinks), gensym("plinks"),
+                    A_FLOAT, 0);
+    class_addmethod(rain_tilde_class, reinterpret_cast<t_method>(rain_bed), gensym("bed"), A_FLOAT,
+                    0);
+    class_addmethod(rain_tilde_class, reinterpret_cast<t_method>(rain_brightness),
+                    gensym("brightness"), A_FLOAT, 0);
+    class_addmethod(rain_tilde_class, reinterpret_cast<t_method>(rain_resonance),
+                    gensym("resonance"), A_FLOAT, 0);
     class_addmethod(rain_tilde_class, reinterpret_cast<t_method>(rain_status), gensym("status"),
                     A_NULL);
-    const char *removed[] = {"pitch", "drops", "distance", "saturation"};
-    for (auto name : removed)
-        class_addmethod(rain_tilde_class, reinterpret_cast<t_method>(rain_legacy), gensym(name),
-                        A_GIMME, 0);
 }
