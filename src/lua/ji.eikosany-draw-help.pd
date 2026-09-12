@@ -1,4 +1,4 @@
-#N canvas 0 0 925 1131 10;
+#N canvas 0 0 1112 1129 10;
 #X declare -lib xlab;
 #X text 24 22 ji.eikosany-draw;
 #X text 24 46 Draw and explore the twenty vertices of a six-identity Eikosany.;
@@ -28,11 +28,9 @@
 #X text 574 299 outlet 2: three related subharmonic tetrads;
 #X text 574 321 outlet 3: three related harmonic tetrads;
 #X obj 171 560 bhack.print;
-#X obj 317 558 bhack.print;
 #X connect 4 0 9 0;
 #X connect 5 0 9 0;
 #X connect 9 0 10 0;
-#X connect 9 2 20 0;
 #X connect 10 0 11 0;
 #X connect 12 0 9 0;
 #X connect 13 0 12 0;

@@ -124,6 +124,9 @@ set_target_properties(
 target_compile_definitions(besseldrum_tilde PRIVATE USE_BOOST_BESSEL)
 target_link_libraries(besseldrum_tilde PRIVATE Boost::headers)
 
+pd_add_external(rain~ "${CMAKE_CURRENT_SOURCE_DIR}/src/others/rain~.cpp")
+pd_add_external(rperlin "${CMAKE_CURRENT_SOURCE_DIR}/src/others/rperlin.cpp")
+
 # ╭──────────────────────────────────────╮
 # │                 stk                  │
 # ╰──────────────────────────────────────╯
@@ -349,7 +352,11 @@ add_dependencies(
     tsf_tilde)
 
 if(NOT EMSCRIPTEN)
-    add_dependencies(edit_files ambi_tilde py4pd)
+    add_dependencies(
+        edit_files
+        ambi_tilde
+        py4pd
+        lua)
 endif()
 
 add_dependencies(xlab edit_files)
