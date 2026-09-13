@@ -52,9 +52,10 @@ All layer levels and brightness range from 0 to 1; layer gains smooth with a
 event is created; their frequencies stay in 650–1600 Hz and decay time is 4 ms.
 They do not require a cone waveform. The actual paper water model still does.
 
-Hybrid arrivals use exponential waiting times: `density` is the average drops
-per second, with natural clusters and gaps. A fixed `metro` sending bangs still
-produces fixed timing; use automatic density for irregular rain.
+Hybrid arrivals use exponential waiting times, with clusters and gaps.
+`rainrate` now determines both their mean count and drop-size distribution;
+`density` can override the count. A fixed `metro` sending bangs still produces
+fixed timing. Poisson timing is an approximation, not a model of storm clustering.
 
 Below 150 drops/s, new hybrid drops gradually use a shorter, quieter splash,
 a faster attack, and stronger surface resonances so isolated events
@@ -85,7 +86,7 @@ Suggested starting point:
 model hybrid
 surface hard
 material ground
-radius 0.0005 0.003
+radius 0.0001 0.003
 impact 0.25
 splash 0.8
 tone 0.06
@@ -93,7 +94,8 @@ resonance 6
 plinks 0
 bed 0.12
 brightness 0.45
-density 800
+collection 0.1
+rainrate 5
 ```
 
 Code comments explicitly say “Here I implement…” or “Here I add…” for these
@@ -144,7 +146,8 @@ opening radius, so sqrt(A/pi)/lambda = opening_radius/lambda.
 
 - It names A(vterm) and relates it to impact energy, but supplies no formula to
   calculate it from terminal velocity. `amplitude` supplies A directly, in m/s.
-  No terminal-velocity, kinetic-energy scaling or drop-size/loudness law is added.
+  Fall speed is used only for the added arrival distribution, not to set A or
+  introduce kinetic-energy scaling in the paper pressure response.
 - The water calculation depends on the pinch-off function v0(t); examples are
   referred to another work. `pinch` therefore requires a user-supplied velocity
   waveform. There is no invented default oscillation, delay, glide or damping.
@@ -152,21 +155,25 @@ opening radius, so sqrt(A/pi)/lambda = opening_radius/lambda.
   assumes each triggered event satisfies those conditions. `surface hard` does
   not use the cone response. No random entrainment-probability law is inserted into the paper water model.
 - Section 3.1 permits randomized sizes but gives no size distribution. The
-  default radius range is 0.0005–0.002 m. Radius ranges are sampled uniformly,
-  an explicit sampling choice rather than a claimed empirical rain distribution.
+  Marshall–Palmer scene model below is an empirical addition used in both
+  rendering modes, not a result from the DAFx paper.
 - Section 4 treats vibrating roofs and rustling leaves as additional future
   sound sources. Hybrid material presets are separate sound-design additions.
 
 ## Controls and units
 
-Creation: `[rain~ 800]`; omitted, zero or negative creation arguments use 800.
-Send `density 0` to disable automatic events. Bangs still work.
+Creation: `[rain~]` starts at `rainrate 5`, with a 0.1 m² collection area
+(about 316 drops/s). A positive argument, e.g. `[rain~ 800]`, retains its meaning
+as a manual drops/s override; omitted, zero or negative arguments use rain-rate
+control. Send `rainrate 0` or `density 0` to stop automatic events. Bangs still work.
 
 | Message | Meaning and initial value |
 | --- | --- |
 | `bang` | One event at the next DSP block. |
-| `density 800` | Arrival count per second; range 0–10000. No 600/s cap or noise-bed substitution. |
-| `radius 0.0005 0.002` | Default minimum/maximum drop **radius in meters**, not diameter or millimeters. Equal values give fixed size; maximum permitted radius is 0.02 m. |
+| `rainrate 5` | Rain rate in mm/hour, range 0–1000. Sets Marshall–Palmer sizes and restores automatic density. Zero stops arrivals and preserves the last wet size law for bangs. |
+| `collection 0.1` | Effective audible collecting surface in m², range 0–1000. Scales automatic counts; does not change sizes or restore automatic density after a manual override. |
+| `density 800` | Manual arrival count per second, range 0–10000; retains the current size law. The next `rainrate` message restores coupled counts. |
+| `radius 0.0001 0.003` | Default truncation limits, drop **radius in meters** (diameter 0.2–6 mm). Recomputes sizes and automatic density. Equal values fix size for bangs/manual density and give zero automatic flux; maximum permitted radius is 0.02 m. |
 | `area 0.5 5` | Inner/outer horizontal radii of the source annulus, meters. Inner must exceed both drop and opening radii. Equal limits specify a circular ring. |
 | `height 1.7` | Listener height above the source plane, meters. |
 | `amplitude 1` | A(vterm), the step surface velocity in m/s; applies to the initial impact. |
@@ -177,7 +184,7 @@ Send `density 0` to disable automatic events. Bangs still work.
 | `pinch velocity-array 48000` | Copy array samples as v0(t) in m/s, at the stated Hz. Omitted/zero rate means current DSP rate. Requires 1–2048 finite samples. |
 | `surface water` | Initial impact plus cone radiation; requires valid cone and pinch inputs first. |
 | `seed 1234` | Reseed the random generator; zero maps to 1. |
-| `status` | Print active voices and events dropped because of numerical/storage capacity. |
+| `status` | Print voices, capacity drops, rain rate, collection area, actual density, automatic/manual mode, and uncapped expected arrivals. |
 
 Scene defaults are explicit chosen input values, not numbers established by the
 paper. `pitch`, `drops`, `distance`, and `saturation` remain unsupported. Hybrid
@@ -186,6 +193,44 @@ paper. `pitch`, `drops`, `distance`, and `saturation` remain unsupported. Hybrid
 For one drop every five seconds, send `density 0` and connect `[metro 5000]`
 to `[rain~]`. No `bed 0` is needed. See `patches/rain-paper.pd` for a working patch.
 Restart Pd after rebuilding to load the new class with its single mono signal outlet.
+
+## Marshall–Palmer scene model
+
+For diameter D in millimeters and rain rate R in mm/hour, the airborne
+concentration is `N(D) = 8000 exp(-Lambda D)` in m⁻³ mm⁻¹, with
+`Lambda = 4.1 R^-0.21` in mm⁻¹. See
+[Rees and Garrett (2021)](https://amt.copernicus.org/articles/14/7681/2021/).
+Surface impacts use the flux distribution `p(D) ∝ v(D) N(D)`, with
+`v(D) = max(0, 9.65 - 10.3 exp(-0.6 D))` m/s, using the Atlas relation
+reported in [Frech and Hubbert (2022)](https://amt.copernicus.org/articles/15/503/2022/).
+The nonnegative clamp is a numerical guard outside the useful range of the fit.
+
+The expected arrival count is `collection * integral(v(D) N(D) dD)` over the
+radius limits converted to diameter. We retain the empirical intercept 8000;
+the resulting water-volume flux need not equal R exactly after truncation and
+the fall-speed approximation. Marshall–Palmer is a starting model for stratiform
+rain, not a universal distribution for drizzle or convective storms. Radii
+outside the default interval are artistic extensions. If the entire interval
+has zero fall speed, automatic flux is zero and manual events use the lower radius.
+
+The collection area represents audible patches distributed across the `area`
+annulus, not the full annulus surface. Moving that annulus changes propagation
+and level without changing rainfall counts. Increasing collection scales counts
+linearly until the existing 10000/s safety limit; `status` exposes the uncapped
+value. Fixed-radius intervals have zero measure in this continuous distribution;
+use `density` or bangs for monodisperse experiments.
+
+Higher rain rates increase density and the fraction of large drops together.
+The sampled radius feeds the existing pressure kernel, excitation, splash length,
+and surface resonance tuning/damping. Background intensity follows the derived
+density. The empirical scene model does not change the acoustic equations or
+claim calibrated material responses.
+
+The sampler uses 2048 diameter bins, integrating the exponential within each
+bin and holding fall speed at its midpoint. Tables rebuild on rain-rate/radius
+messages, without consuming random numbers. Each event uses one seeded uniform
+draw, a bounded binary search, and the within-bin inverse exponential CDF.
+There is no rejection loop or allocation in the audio callback.
 
 ## Numerical and implementation notes — not additional physics
 
@@ -235,5 +280,7 @@ Tests compare Equation 2 against its literal formula, compare integrated pressur
 against an independent numerical disk integral of Equation 1, test sub-sample
 pulse area, compare Equation 3 against a closed-form constant-input solution,
 and check silence, bangs, linear amplitude scaling,
-configuration errors, finite output and explicit capacity accounting. They do
+configuration errors, finite output and explicit capacity accounting. They
+also check Marshall–Palmer flux, sampled mean/tail probabilities, arrival counts, rate coupling,
+manual overrides, dry weather, and extreme controls. These checks do
 not establish perceptual equivalence to the authors' demonstration recordings.

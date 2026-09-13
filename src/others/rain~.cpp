@@ -10,6 +10,7 @@ static t_class *rain_tilde_class;
 constexpr double PI = 3.14159265358979323846;
 constexpr int MAX_VOICES = 512, MAX_KERNEL = 128, MAX_PINCH = 2048, MAX_WATER = 16384;
 constexpr double MAX_DENSITY = 10000;
+constexpr int DROP_BINS = 2048;
 
 // Sound-design layers below are perceptual additions, NOT DAFx equations.
 struct Ring {
@@ -141,6 +142,8 @@ struct t_rain_tilde {
     t_outlet *out;
     double sample_rate, density, count_fraction;
     double radius_min, radius_max, inner, outer, height;
+    double rain_rate, collection_area, drop_lambda, drop_flux, drop_cdf[DROP_BINS + 1];
+    bool automatic_density;
     double rho, c, amplitude, gain;
     double cone_length, opening_radius, splay;
     double pinch_rate, pinch[MAX_PINCH], water_delta[MAX_WATER];
@@ -167,6 +170,52 @@ static double rain_uniform(t_rain_tilde *x) {
     s ^= s << 5;
     x->rng = s;
     return s * (1.0 / 4294967296.0);
+}
+
+// Marshall-Palmer: N(D)=8000 exp(-Lambda D), Lambda=4.1 R^-0.21.
+// D is diameter in mm, R is mm/hour. Surface arrivals sample v(D)N(D),
+// not the airborne number distribution. Atlas fall speed is in m/s.
+// Sources and truncation/collection-area assumptions are in rain~.md.
+static double rain_fall_speed(double diameter) {
+    return std::max(0.0, 9.65 - 10.3 * std::exp(-0.6 * diameter));
+}
+
+static void rain_update_density(t_rain_tilde *x) {
+    if (x->automatic_density) {
+        x->density = std::min(MAX_DENSITY, x->collection_area * x->drop_flux);
+        x->count_fraction = 0;
+    }
+}
+
+// Build only on control changes; DSP sampling uses a bounded binary search.
+// Integrate the exponential exactly per bin, with midpoint fall speed.
+static void rain_prepare_drops(t_rain_tilde *x) {
+    double lo = 2000 * x->radius_min;
+    double step = 2000 * (x->radius_max - x->radius_min) / DROP_BINS;
+    double total = 0;
+    x->drop_cdf[0] = 0;
+    for (int i = 0; i < DROP_BINS; ++i) {
+        total += rain_fall_speed(lo + (i + 0.5) * step) * std::exp(-x->drop_lambda * i * step) *
+                 (-std::expm1(-x->drop_lambda * step)) / x->drop_lambda;
+        x->drop_cdf[i + 1] = total;
+    }
+    x->drop_flux = x->rain_rate > 0 ? 8000 * std::exp(-x->drop_lambda * lo) * total : 0;
+    for (int i = 1; i <= DROP_BINS; ++i)
+        x->drop_cdf[i] = total > 0 ? x->drop_cdf[i] / total : 0;
+    rain_update_density(x);
+}
+
+static double rain_drop_radius(t_rain_tilde *x) {
+    double u = rain_uniform(x);
+    if (x->radius_min == x->radius_max || x->drop_cdf[DROP_BINS] == 0)
+        return x->radius_min;
+    const double *upper = std::upper_bound(x->drop_cdf, x->drop_cdf + DROP_BINS + 1, u);
+    int bin = std::min(DROP_BINS - 1, int(upper - x->drop_cdf) - 1);
+    double fraction = (u - x->drop_cdf[bin]) / (x->drop_cdf[bin + 1] - x->drop_cdf[bin]);
+    // Invert the exponential within the bin (the speed is held at its midpoint).
+    double step = 2000 * (x->radius_max - x->radius_min) / DROP_BINS;
+    double offset = -std::log1p(fraction * std::expm1(-x->drop_lambda * step)) / x->drop_lambda;
+    return std::min(x->radius_max, x->radius_min + (bin * step + offset) / 2000);
 }
 
 // ─────────────────────────────────────
@@ -357,10 +406,8 @@ static void rain_trigger(t_rain_tilde *x, double arrival, bool manual = false) {
     double x0 = std::sqrt(x->inner * x->inner +
                           rain_uniform(x) * (x->outer * x->outer - x->inner * x->inner));
 
-    // Section 3.1 allows user-specified or randomized radii, but gives no size
-    // distribution. Equal radius limits specify one size; uniform is our stated
-    // numerical sampling choice when a range is supplied.
-    double a = x->radius_min + rain_uniform(x) * (x->radius_max - x->radius_min);
+    // Empirical scene input added to Section 3.1; equal limits still fix size.
+    double a = rain_drop_radius(x);
     RainVoice &v = x->voices[x->active];
     v = RainVoice{};
     const auto &material = RAIN_MATERIALS[x->material];
@@ -582,9 +629,32 @@ static t_int *rain_perform(t_int *w) {
 // ─────────────────────────────────────
 static void rain_density(t_rain_tilde *x, t_floatarg value) {
     if (std::isfinite(value)) {
+        x->automatic_density = false;
         x->density = std::max(0.0, std::min(double(value), MAX_DENSITY));
         x->count_fraction = 0;
     }
+}
+
+static void rain_rainrate(t_rain_tilde *x, t_floatarg value) {
+    if (!std::isfinite(value) || value < 0 || value > 1000) {
+        pd_error(x, "rain~: rainrate must be 0..1000 mm/hour");
+        return;
+    }
+    x->rain_rate = value;
+    // Dry weather keeps the last wet size law available for manual bangs.
+    if (value > 0)
+        x->drop_lambda = 4.1 * std::pow(double(value), -0.21);
+    x->automatic_density = true;
+    rain_prepare_drops(x);
+}
+
+static void rain_collection(t_rain_tilde *x, t_floatarg value) {
+    if (!std::isfinite(value) || value < 0 || value > 1000) {
+        pd_error(x, "rain~: collection must be 0..1000 square meters");
+        return;
+    }
+    x->collection_area = value;
+    rain_update_density(x);
 }
 
 // ─────────────────────────────────────
@@ -620,6 +690,7 @@ static void rain_radius(t_rain_tilde *x, t_floatarg lo, t_floatarg hi) {
     }
     x->radius_min = lo;
     x->radius_max = hi;
+    rain_prepare_drops(x);
 }
 
 // ─────────────────────────────────────
@@ -740,6 +811,10 @@ static void rain_air(t_rain_tilde *x, t_floatarg rho, t_floatarg c) {
 static void rain_status(t_rain_tilde *x) {
     post("rain~: DAFx 2004 Eq. 1/2/3; %d active; %llu capacity-dropped events", x->active,
          static_cast<unsigned long long>(x->dropped));
+    post("rain~: Marshall-Palmer %.6g mm/hour; collection %.6g m^2; %.6g drops/s (%s); "
+         "uncapped flux %.6g drops/s",
+         x->rain_rate, x->collection_area, x->density,
+         x->automatic_density ? "rainrate" : "manual density", x->collection_area * x->drop_flux);
 }
 
 // ─────────────────────────────────────
@@ -845,11 +920,12 @@ static void *rain_new(t_floatarg density) {
     if (x->sample_rate < 1000 || x->sample_rate > 384000 || !std::isfinite(x->sample_rate))
         x->sample_rate = 44100;
     // Scene/playback defaults, NOT measured values supplied by the paper.
-    x->density = 800;
+    x->radius_min = 0.0001;
+    x->radius_max = 0.003; // Truncated empirical range: diameter 0.2..6 mm.
+    x->collection_area = 0.1;
+    rain_rainrate(x, 5);
     if (density > 0)
         rain_density(x, density);
-    x->radius_min = 0.0005;
-    x->radius_max = 0.002; // Varied scene input for the hybrid default, not a paper distribution.
     x->inner = 0.5;
     x->outer = 5;
     x->height = 1.7;
@@ -901,6 +977,10 @@ extern "C" void rain_tilde_setup() {
                     0);
     class_addmethod(rain_tilde_class, reinterpret_cast<t_method>(rain_density), gensym("density"),
                     A_FLOAT, 0);
+    class_addmethod(rain_tilde_class, reinterpret_cast<t_method>(rain_rainrate), gensym("rainrate"),
+                    A_FLOAT, 0);
+    class_addmethod(rain_tilde_class, reinterpret_cast<t_method>(rain_collection),
+                    gensym("collection"), A_FLOAT, 0);
     class_addmethod(rain_tilde_class, reinterpret_cast<t_method>(rain_seed), gensym("seed"),
                     A_FLOAT, 0);
     class_addmethod(rain_tilde_class, reinterpret_cast<t_method>(rain_radius), gensym("radius"),
