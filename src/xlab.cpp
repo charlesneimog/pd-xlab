@@ -1,63 +1,98 @@
-#include "xlab.hpp"
+#include <string>
 
-static t_class *xlabLib;
+#include <m_pd.h>
+
+extern "C" {
+#include <g_canvas.h>
+#include <s_stuff.h>
+}
+
+struct xlab {
+    t_object obj;
+};
+
+static t_class *xlab_class;
+static std::string xlab_lib_path;
 
 // ─────────────────────────────────────
-static void *xlab_new(void) {
-    xlab *x = (xlab *)pd_new(xlabLib);
-    return (x);
+static void xlab_add_path(t_canvas *canvas, const std::string &path) {
+    if (!canvas || path.empty())
+        return;
+
+    t_atom args[2];
+    SETSYMBOL(&args[0], gensym("-path"));
+    SETSYMBOL(&args[1], gensym(path.c_str()));
+
+    // Equivalent to sending: declare -path <path>
+    pd_typedmess(reinterpret_cast<t_pd *>(canvas), gensym("declare"), 2, args);
 }
 
 // ─────────────────────────────────────
-extern "C" void xlab_setup(void) {
-    int major, minor, micro;
+static void xlab_add_paths(t_canvas *canvas) {
+    xlab_add_path(canvas, xlab_lib_path);
+    xlab_add_path(canvas, xlab_lib_path + "/sf");
+    xlab_add_path(canvas, xlab_lib_path + "/lua/pd-upic");
+    xlab_add_path(canvas, xlab_lib_path + "/lua/pd-orchidea");
+}
+
+// ─────────────────────────────────────
+static void xlab_version(xlab *) {
+    post("[pd-xlab] version %d.%d.%d built on %s %s", 0, 1, 0, __DATE__, __TIME__);
+}
+
+// ─────────────────────────────────────
+static void *xlab_new() {
+    auto *x = reinterpret_cast<xlab *>(pd_new(xlab_class));
+    t_canvas *canvas = canvas_getcurrent();
+    if (!canvas) {
+        pd_error(x, "[xlab] could not find the current canvas");
+        return x;
+    }
+    xlab_add_paths(canvas);
+    return x;
+}
+
+// ─────────────────────────────────────
+static void xlab_load_dependency(t_canvas *canvas, const char *library) {
+    const std::string path = xlab_lib_path + "/" + library;
+    if (!sys_load_lib(canvas, path.c_str())) {
+        logpost(nullptr, 2,
+                "[xlab] %s could not be loaded; some objects or "
+                "abstractions will not work",
+                library);
+    }
+}
+
+// ─────────────────────────────────────
+extern "C" void xlab_setup() {
+    int major;
+    int minor;
+    int micro;
+
     sys_getversion(&major, &minor, &micro);
-    if (major < 0 && minor < 56) {
-        pd_error(nullptr, "[xlab] xlab is not supported because or Pd is too old, update Pd");
+    const bool pd_is_too_old = major < 0 || (major == 0 && minor < 56);
+    if (pd_is_too_old) {
+        pd_error(nullptr,
+                 "[xlab] Pd %d.%d.%d is too old; "
+                 "Pd 0.56 or newer is required",
+                 major, minor, micro);
         return;
     }
 
-    xlabLib =
-        class_new(gensym("xlab"), (t_newmethod)xlab_new, 0, sizeof(xlab), CLASS_NOINLET, A_NULL, 0);
+    xlab_class = class_new(gensym("xlab"), reinterpret_cast<t_newmethod>(xlab_new), nullptr,
+                           sizeof(xlab), CLASS_DEFAULT, A_NULL);
+    class_addmethod(xlab_class, reinterpret_cast<t_method>(xlab_version), gensym("version"),
+                    A_NULL);
 
-    // add to the search path
-    std::string lib_path = xlabLib->c_externdir->s_name;
-    std::string sf = lib_path + "/sf/";
-
-    STUFF->st_searchpath = namelist_append(STUFF->st_searchpath, lib_path.c_str(), 0);
-    STUFF->st_searchpath = namelist_append(STUFF->st_searchpath, sf.c_str(), 0);
-
-    const char *lualibs[] = {"pd-upic", "pd-orchidea"};
-    for (auto &lib : lualibs) {
-        std::string lualib = lib_path + "/lua/" + lib;
-        STUFF->st_searchpath = namelist_append(STUFF->st_searchpath, lualib.c_str(), 0);
+    const char *external_dir = class_gethelpdir(xlab_class);
+    if (!external_dir || !external_dir[0]) {
+        pd_error(nullptr, "[xlab] could not determine its installation directory");
+        return;
     }
 
-    t_canvas *cnv = canvas_getcurrent();
-    std::vector<std::string> libs = {"lua", "py4pd"};
-    for (auto lib : libs) {
-        int result = sys_load_lib(cnv, lib.c_str());
-        if (!result) {
-            logpost(nullptr, 2, "[xlab] %s was not load, some objects/abstractions will not work",
-                    lib.c_str());
-        }
-    }
-
-    // // arrays
-    // arrayrotate_setup();
-    // arraysum_setup();
-    // arrayappend_setup();
-    //
-    // // statistics
-    // kldivergence_setup();
-    // renyi_setup();
-    // euclidean_setup();
-    // entropy_setup();
-    // kalman_setup();
-    //
-    // // utils
-    // infinite0x2erecord_tilde_setup();
-    // xcputime_setup();
-
-    post("[pd-xlab] version %d.%d.%d build on %s %s", 0, 1, 0, __DATE__, __TIME__);
+    xlab_lib_path = external_dir;
+    t_canvas *canvas = canvas_getcurrent();
+    xlab_load_dependency(canvas, "lua");
+    xlab_load_dependency(canvas, "py4pd");
+    post("[pd-xlab] version %d.%d.%d built on %s %s", 0, 1, 0, __DATE__, __TIME__);
 }
