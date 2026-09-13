@@ -114,16 +114,21 @@ set_target_properties(
                CXX_EXTENSIONS OFF)
 
 # instruments
-find_package(Boost CONFIG REQUIRED)
 pd_add_external(besseldrum~ "${CMAKE_CURRENT_SOURCE_DIR}/src/instruments/besseldrum~.cpp")
 set_target_properties(
     besseldrum_tilde
     PROPERTIES CXX_STANDARD 17
                CXX_STANDARD_REQUIRED ON
                CXX_EXTENSIONS OFF)
-target_compile_definitions(besseldrum_tilde PRIVATE USE_BOOST_BESSEL)
-target_link_libraries(besseldrum_tilde PRIVATE Boost::headers)
+if(EMSCRIPTEN)
+    target_compile_options(besseldrum_tilde PRIVATE "-sUSE_BOOST_HEADERS=1")
+    target_link_options(besseldrum_tilde PRIVATE "-sUSE_BOOST_HEADERS=1")
+else()
+    find_package(Boost CONFIG REQUIRED)
+    target_link_libraries(besseldrum_tilde PRIVATE Boost::headers)
+endif()
 
+# Memoria da Chuva
 pd_add_external(rain~ "${CMAKE_CURRENT_SOURCE_DIR}/src/others/rain~.cpp")
 pd_add_external(rperlin "${CMAKE_CURRENT_SOURCE_DIR}/src/others/rperlin.cpp")
 
