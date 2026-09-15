@@ -293,10 +293,12 @@ static void infinite_record_free(infinite_record *x) {
 }
 
 // ─────────────────────────────────────
-extern "C" void setup_x0x2einfinite0x2erecord_tilde(void) {
-    infinite_record_class = class_new(gensym("x.infinite.record~"), (t_newmethod)infinite_record_new,
-                                      (t_method)infinite_record_free, sizeof(infinite_record),
-                                      CLASS_DEFAULT, A_GIMME, 0);
+extern "C" void setup_x0x2ei0x2erecord_tilde(void) {
+    infinite_record_class = class_new(
+        gensym("x.infinite.record~"), (t_newmethod)infinite_record_new,
+        (t_method)infinite_record_free, sizeof(infinite_record), CLASS_DEFAULT, A_GIMME, 0);
+
+    class_addcreator((t_newmethod)infinite_record_new, gensym("x.irecord~"), A_GIMME, 0);
 
     CLASS_MAINSIGNALIN(infinite_record_class, infinite_record, x_f);
 
@@ -313,4 +315,3 @@ extern "C" void setup_x0x2einfinite0x2erecord_tilde(void) {
     class_addmethod(infinite_record_class, (t_method)infinite_record_fadesize, gensym("fadesize"),
                     A_FLOAT, 0);
 }
-

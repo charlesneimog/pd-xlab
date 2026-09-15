@@ -2,10 +2,11 @@
 
 #include <g_canvas.h>
 
-#include <new>
+#include <string>
 
 static t_class *xdarray_class;
 
+// ─────────────────────────────────────
 struct t_xdarray_buffer {
     // Internal structure, similar to [array define]
     t_canvas *buffer;
@@ -18,6 +19,7 @@ struct t_xdarray_buffer {
     t_xdarray_buffer *next;
 };
 
+// ─────────────────────────────────────
 typedef struct _xdarray {
     t_object x_obj;
 
@@ -25,6 +27,7 @@ typedef struct _xdarray {
     t_canvas *canvas;
     t_xdarray_buffer *buffers;
     t_xdarray_buffer *current;
+    bool nerror = false;
 } t_xdarray;
 
 // ─────────────────────────────────────
@@ -39,13 +42,15 @@ static t_xdarray_buffer *xdarray_find(t_xdarray *x, t_symbol *realname) {
 // ─────────────────────────────────────
 static void xdarray_create(t_xdarray *x, t_symbol *name, t_floatarg fsize) {
     int size = (int)fsize;
-
-    if (size < 1)
+    if (size < 1) {
         size = 1;
+    }
 
     t_symbol *realname = canvas_realizedollar(x->canvas, name);
     if (xdarray_find(x, realname) || pd_findbyclass(realname, garray_class)) {
-        pd_error(x, "[x.darray~] Array '%s' already exists", realname->s_name);
+        if (!x->nerror) {
+            pd_error(x, "[x.darray~] Array '%s' already exists", realname->s_name);
+        }
         return;
     }
 
@@ -70,17 +75,16 @@ static void xdarray_create(t_xdarray *x, t_symbol *name, t_floatarg fsize) {
     if (!buffer) {
         canvas_unsetcurrent(x->canvas);
         delete entry;
-        pd_error(x, "[x.darray~] Could not create internal canvas");
+        if (!x->nerror) {
+            pd_error(x, "[x.darray~] Could not create internal canvas");
+        }
         return;
     }
 
-    // ─────────────────────────────────
     t_glist *graph =
         glist_addglist((t_glist *)buffer, &s_, 0, -1, size > 1 ? size - 1 : 1, 1, 50, 350, 550, 50);
 
-    // ─────────────────────────────────
     t_garray *array = graph ? graph_array(graph, name, &s_float, size, 0) : NULL;
-
     canvas_unsetcurrent(buffer);
     canvas_unsetcurrent(x->canvas);
 
@@ -88,7 +92,9 @@ static void xdarray_create(t_xdarray *x, t_symbol *name, t_floatarg fsize) {
         canvas_free(buffer);
         delete entry;
 
-        pd_error(x, "[x.darray~] Could not create array '%s'", realname->s_name);
+        if (!x->nerror) {
+            pd_error(x, "[x.darray~] Could not create array '%s'", realname->s_name);
+        }
 
         return;
     }
@@ -114,7 +120,9 @@ static void xdarray_delete(t_xdarray *x, t_symbol *name) {
         link = &(*link)->next;
 
     if (!*link) {
-        pd_error(x, "[x.darray~] '%s' is not owned by this object", realname->s_name);
+        if (!x->nerror) {
+            pd_error(x, "[x.darray~] '%s' is not owned by this object", realname->s_name);
+        }
         return;
     }
 
@@ -131,7 +139,9 @@ static void xdarray_set(t_xdarray *x, t_symbol *name) {
     t_symbol *realname = canvas_realizedollar(x->canvas, name);
     t_xdarray_buffer *entry = xdarray_find(x, realname);
     if (!entry) {
-        pd_error(x, "[x.darray~] '%s' is not owned by this object", realname->s_name);
+        if (!x->nerror) {
+            pd_error(x, "[x.darray~] '%s' is not owned by this object", realname->s_name);
+        }
         return;
     }
     x->current = entry;
@@ -140,7 +150,9 @@ static void xdarray_set(t_xdarray *x, t_symbol *name) {
 // ─────────────────────────────────────
 static void xdarray_open(t_xdarray *x) {
     if (!x->current) {
-        pd_error(x, "[x.darray~] No array defined");
+        if (!x->nerror) {
+            pd_error(x, "[x.darray~] No array defined");
+        }
         return;
     }
     canvas_vis(x->current->buffer, 1);
@@ -153,11 +165,22 @@ static void xdarray_click(t_xdarray *x, t_floatarg xpos, t_floatarg ypos, t_floa
 }
 
 // ─────────────────────────────────────
-static void *xdarray_new(void) {
+static void *xdarray_new(t_symbol *s, int argc, t_atom *argv) {
     t_xdarray *x = (t_xdarray *)pd_new(xdarray_class);
     x->canvas = canvas_getcurrent();
     x->buffers = NULL;
     x->current = NULL;
+    x->nerror = false;
+
+    for (int i = 0; i < argc; i++) {
+        if (argv[i].a_type == A_SYMBOL) {
+            t_symbol *sym = atom_getsymbol(argv + i);
+            if (std::string(sym->s_name) == "-nerror") {
+                x->nerror = true;
+            }
+        }
+    }
+
     return x;
 }
 
@@ -175,7 +198,7 @@ static void xdarray_free(t_xdarray *x) {
 // ─────────────────────────────────────
 extern "C" void setup_x0x2edarray(void) {
     xdarray_class = class_new(gensym("x.darray"), (t_newmethod)xdarray_new, (t_method)xdarray_free,
-                              sizeof(t_xdarray), CLASS_DEFAULT, A_NULL);
+                              sizeof(t_xdarray), CLASS_DEFAULT, A_GIMME, 0);
 
     class_addmethod(xdarray_class, (t_method)xdarray_create, gensym("create"), A_SYMBOL, A_DEFFLOAT,
                     0);

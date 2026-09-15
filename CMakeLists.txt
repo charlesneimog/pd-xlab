@@ -132,6 +132,8 @@ endif()
 pd_add_external(x.rain~ "${CMAKE_CURRENT_SOURCE_DIR}/src/others/x.rain~.cpp")
 pd_add_external(x.rperlin "${CMAKE_CURRENT_SOURCE_DIR}/src/others/x.rperlin.cpp")
 
+set_target_properties(x.rperlin PROPERTIES CXX_STANDARD 17 CXX_STANDARD_REQUIRED ON)
+
 # ╭──────────────────────────────────────╮
 # │                 stk                  │
 # ╰──────────────────────────────────────╯
