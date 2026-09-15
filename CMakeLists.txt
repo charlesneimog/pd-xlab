@@ -175,7 +175,7 @@ target_include_directories(x.clarinet_tilde PRIVATE "${stk_SOURCE_DIR}/include")
 # ╭──────────────────────────────────────╮
 # │                Utils                 │
 # ╰──────────────────────────────────────╯
-pd_add_external(x.darray~ "${CMAKE_CURRENT_SOURCE_DIR}/src/utilities/x.darray~.cpp")
+pd_add_external(x.darray "${CMAKE_CURRENT_SOURCE_DIR}/src/utilities/x.darray.cpp")
 pd_add_external(x.cputime "${CMAKE_CURRENT_SOURCE_DIR}/src/utilities/x.cputime.cpp")
 
 # ╭──────────────────────────────────────╮
@@ -315,29 +315,41 @@ target_link_libraries(xlab PRIVATE lua)
 # ╭──────────────────────────────────────╮
 # │ Lua, Python Objects + Audio and Data │
 # ╰──────────────────────────────────────╯
-file(GLOB LUA_OBJECTS CONFIGURE_DEPENDS
-     "${CMAKE_CURRENT_SOURCE_DIR}/src/lua/*.pd_lua"
-     "${CMAKE_CURRENT_SOURCE_DIR}/src/granulador/*.pd_lua")
+file(
+    GLOB
+    LUA_OBJECTS
+    CONFIGURE_DEPENDS
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/lua/*.pd_lua"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/granulador/*.pd_lua")
 pd_add_datafile(xlab "${LUA_OBJECTS}")
-file(GLOB_RECURSE XLAB_HELP_FILES CONFIGURE_DEPENDS
-     "${CMAKE_CURRENT_SOURCE_DIR}/src/x.*-help.pd"
-     "${CMAKE_CURRENT_SOURCE_DIR}/resources/x.*-help.pd")
+file(
+    GLOB_RECURSE
+    XLAB_HELP_FILES
+    CONFIGURE_DEPENDS
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/x.*-help.pd"
+    "${CMAKE_CURRENT_SOURCE_DIR}/resources/x.*-help.pd")
 pd_add_datafile(xlab "${XLAB_HELP_FILES}")
 pd_add_datafile(xlab "${CMAKE_CURRENT_SOURCE_DIR}/src/lua/sieve.lua")
 pd_add_datafile(xlab "${CMAKE_CURRENT_SOURCE_DIR}/src/lua/om_ji.lua")
 
-file(GLOB PYTHON_OBJECTS CONFIGURE_DEPENDS
-     "${CMAKE_CURRENT_SOURCE_DIR}/src/python/*.pd_py"
-     "${CMAKE_CURRENT_SOURCE_DIR}/resources/ai/*.pd_py")
+file(
+    GLOB
+    PYTHON_OBJECTS
+    CONFIGURE_DEPENDS
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/python/*.pd_py"
+    "${CMAKE_CURRENT_SOURCE_DIR}/resources/ai/*.pd_py")
 pd_add_datafile(xlab "${PYTHON_OBJECTS}")
 
 file(GLOB AUDIO_FILES "${CMAKE_CURRENT_SOURCE_DIR}/resources/audios/*.wav")
 pd_add_datafile(xlab "${AUDIO_FILES}")
 
-file(GLOB ABS_FILES CONFIGURE_DEPENDS
-     "${CMAKE_CURRENT_SOURCE_DIR}/resources/abs/*.pd"
-     "${CMAKE_CURRENT_SOURCE_DIR}/resources/x.cphasevoc~.pd"
-     "${CMAKE_CURRENT_SOURCE_DIR}/src/granulador/x.granulator.pd")
+file(
+    GLOB
+    ABS_FILES
+    CONFIGURE_DEPENDS
+    "${CMAKE_CURRENT_SOURCE_DIR}/resources/abs/*.pd"
+    "${CMAKE_CURRENT_SOURCE_DIR}/resources/x.cphasevoc~.pd"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/granulador/x.granulator.pd")
 pd_add_datafile(xlab "${ABS_FILES}")
 pd_add_datafile(xlab "${DDDD_LUA}")
 

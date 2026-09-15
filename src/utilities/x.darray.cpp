@@ -173,8 +173,8 @@ static void xdarray_free(t_xdarray *x) {
 }
 
 // ─────────────────────────────────────
-extern "C" void setup_x0x2edarray_tilde(void) {
-    xdarray_class = class_new(gensym("x.darray~"), (t_newmethod)xdarray_new, (t_method)xdarray_free,
+extern "C" void setup_x0x2edarray(void) {
+    xdarray_class = class_new(gensym("x.darray"), (t_newmethod)xdarray_new, (t_method)xdarray_free,
                               sizeof(t_xdarray), CLASS_DEFAULT, A_NULL);
 
     class_addmethod(xdarray_class, (t_method)xdarray_create, gensym("create"), A_SYMBOL, A_DEFFLOAT,
