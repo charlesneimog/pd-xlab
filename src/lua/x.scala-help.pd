@@ -1,0 +1,8 @@
+#N canvas 0 0 925 1132 10;
+#X declare -lib xlab;
+#X obj 8 1 declare -lib xlab;
+#X obj 37 139 x.scala;
+#X msg 37 70 open scl/werck4.scl;
+#X obj 37 161 print;
+#X connect 1 0 3 0;
+#X connect 2 0 1 0;

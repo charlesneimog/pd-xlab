@@ -56,9 +56,9 @@ target_include_directories(elements PRIVATE ${eurorack_SOURCE_DIR})
 
 # ---- Compile definitions ----
 target_compile_definitions(elements PRIVATE TEST)
-pd_add_external(elements~ "${CMAKE_CURRENT_SOURCE_DIR}/elements~.cpp")
-target_link_libraries(elements_tilde PRIVATE elements)
-target_include_directories(elements_tilde SYSTEM PUBLIC ${eurorack_SOURCE_DIR})
+pd_add_external(x.elements~ "${CMAKE_CURRENT_SOURCE_DIR}/x.elements~.cpp")
+target_link_libraries(x.elements_tilde PRIVATE elements)
+target_include_directories(x.elements_tilde SYSTEM PUBLIC ${eurorack_SOURCE_DIR})
 
 # ╭──────────────────────────────────────╮
 # │                RINGS                 │
@@ -80,6 +80,6 @@ add_library(rings STATIC ${RINGS_SOURCES})
 target_include_directories(rings SYSTEM PUBLIC ${eurorack_SOURCE_DIR})
 target_compile_definitions(rings PUBLIC TEST=1 _USE_MATH_DEFINES=1)
 set_target_properties(rings PROPERTIES POSITION_INDEPENDENT_CODE ON)
-pd_add_external(rings~ "${CMAKE_CURRENT_SOURCE_DIR}/rings~.cpp")
-target_link_libraries(rings_tilde PRIVATE rings)
-target_include_directories(rings_tilde SYSTEM PUBLIC ${eurorack_SOURCE_DIR})
+pd_add_external(x.rings~ "${CMAKE_CURRENT_SOURCE_DIR}/x.rings~.cpp")
+target_link_libraries(x.rings_tilde PRIVATE rings)
+target_include_directories(x.rings_tilde SYSTEM PUBLIC ${eurorack_SOURCE_DIR})

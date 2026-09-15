@@ -1,6 +1,6 @@
 // Standalone: c++ -std=c++17 -O2 -ffunction-sections -fdata-sections \
 // -I/usr/include/pd tests/rain_dsp.cpp -Wl,--gc-sections -o /tmp/rain_dsp_test
-#include "../src/others/rain~.cpp"
+#include "../src/others/x.rain~.cpp"
 #include <cassert>
 #include <cstdio>
 #include <limits>

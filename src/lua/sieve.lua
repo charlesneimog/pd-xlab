@@ -148,7 +148,7 @@ end
 
 function M.union(...)
 	local args = { ... }
-	if #args < 2 then error("s.union expects at least two sieves") end
+	if #args < 2 then error("x.set.union expects at least two sieves") end
 	local result = { "sieve-u" }
 	for _, value in ipairs(args) do append(result, M.normalize(value)) end
 	return result
@@ -156,7 +156,7 @@ end
 
 function M.intersection(...)
 	local args = { ... }
-	if #args < 2 then error("s.intersection expects at least two sieves") end
+	if #args < 2 then error("x.set.intersection expects at least two sieves") end
 	local result = { "sieve-i" }
 	for _, value in ipairs(args) do append(result, M.normalize(value)) end
 	return result
@@ -198,7 +198,7 @@ function M.reveal(value)
 end
 
 function M.list(values)
-	if type(values) ~= "table" then error("s.list expects a list") end
+	if type(values) ~= "table" then error("x.set.list expects a list") end
 	if M.is_expression(values) then return { M.normalize(values) } end
 	local result = {}
 	for _, value in ipairs(values) do append(result, M.normalize(value)) end
@@ -207,14 +207,14 @@ end
 
 function M.union_list(values)
 	local expressions = M.list(values)
-	if #expressions == 0 then error("s.union-l expects a non-empty list") end
+	if #expressions == 0 then error("x.set.union-l expects a non-empty list") end
 	if #expressions == 1 then return expressions[1] end
 	return M.union(unpack(expressions))
 end
 
 function M.intersection_list(values)
 	local expressions = M.list(values)
-	if #expressions == 0 then error("s.intersection-l expects a non-empty list") end
+	if #expressions == 0 then error("x.set.intersection-l expects a non-empty list") end
 	if #expressions == 1 then return expressions[1] end
 	return M.intersection(unpack(expressions))
 end
@@ -258,7 +258,7 @@ function M.ariza(value, limit)
 end
 
 function M.limit(values, limit, mode)
-	if type(values) ~= "table" then error("s.limite expects a list of sieves") end
+	if type(values) ~= "table" then error("x.set.limite expects a list of sieves") end
 	limit = integer(limit or 225, "limit")
 	local expressions = {}
 	for _, value in ipairs(values) do
@@ -268,7 +268,7 @@ function M.limit(values, limit, mode)
 			and tonumber(value[1]) and tonumber(value[2]) then
 			expressions[#expressions + 1] = M.normalize({ value[1], value[2], limit })
 		else
-			error("s.limite entries must be {modulus offset} pairs")
+			error("x.set.limite entries must be {modulus offset} pairs")
 		end
 	end
 	mode = mode or 1
@@ -296,7 +296,7 @@ end
 
 function M.symmetry_profile(values, range, mode)
 	if type(values) ~= "table" or type(range) ~= "table" then
-		error("s.symmetry-perfil expects sieve list and {first last} range")
+		error("x.set.symmetry-perfil expects sieve list and {first last} range")
 	end
 	local first = integer(range[1], "range start")
 	local last = integer(range[2], "range end")

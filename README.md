@@ -16,11 +16,38 @@
 
 ---
 
+## Object names
+
+Objects maintained in this repository use the `x.` prefix across compiled externals,
+Lua/Python objects, abstractions, and help patches:
+
+| Group | Examples |
+| --- | --- |
+| Utilities | `x.click`, `x.cputime`, `x.curve~`, `x.darray~` |
+| Statistics | `x.entropy`, `x.euclidean`, `x.kalman`, `x.kl` |
+| Audio | `x.tsf~`, `x.fdn~`, `x.freeze~`, `x.gain~` |
+| Arrays | `x.array.rotate`, `x.array.invert`, `x.array.sum` |
+| Sets | `x.set.union`, `x.set.intersection` |
+| Just intonation | `x.ji.hexany`, `x.ji.mos` |
+| GUI | `x.gui.keyboard`, `x.gui.plot`, `x.gui.granulator` |
+
+The library loader remains `[xlab]` / `[declare -lib xlab]`. Third-party libraries
+keep their upstream names. `x.click` retains its signal output despite having no
+tilde in its requested name.
+
+Existing patches must use the new object names; see the complete
+[old-to-new mapping](resources/object-renames.json). Source files with object
+registrations use the object name as their basename, and help files use
+`<object>-help.pd`. Internal support modules retain their existing filenames.
+Experimental sources outside the CMake build remain outside the build.
+
+---
+
 ## 📦 Features
 
 * **Statistics objects** (`statistics`)
 * **Array and signal manipulation** (`arrays`, `manipulations`)
-* **MIR and onset detection** (`mir`, `onsetsds~`)
+* **MIR and onset detection** (`mir`, `x.onsetsds~`)
 * **Python and Lua integration** via [py4pd](https://github.com/py4pd) and `pd_lua`
 * **External plugins** such as `patcherize`
 * **Spatial Audio Framework (SAF)** support:

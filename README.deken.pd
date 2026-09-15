@@ -32,7 +32,7 @@
 #X text 74 506 <-- Click for MacOS OR Windows (go to the bottom of page).;
 #X text 74 537 <-- Click on this bang for Linux.;
 #X obj 30 60 cnv 5 5 22 empty empty Thanks\ for\ downloading\ [py4pd]\ by\ Charles\ K.\ Neimog! 10 12 0 15 #000000 #202020 0;
-#X text 30 248 [py4pd] is used by third-party libraries. I already upload some objects to deken. You can search for pd-ji (Just Intonation Tools) \, Orchidea (load the free Orchidea samples using midi data) and others. Check the complete list in., f 71;
+#X text 30 248 [py4pd] is used by third-party libraries. I already upload some objects to deken. You can search for pd-x.ji (Just Intonation Tools) \, Orchidea (load the free Orchidea samples using midi data) and others. Check the complete list in., f 71;
 #X msg 233 304 charlesneimog.github.io/py4pd;
 #X text 30 149 With Python in Pd you can generate scores \, work with AI \, use lots of Audio Analysis tools and OpenMusic functions with libraries like om_py \, music21 \, neoscore and others. It also brings the feature to write Pd externals in pure Python code \, what allows to use all the big Python enviroment in PureData., f 71;
 #X text 85 381 <-- IMPORTANT: If this object failed to load \, Python is not installed in your system. This version uses python 3.11 and you CAN'T use any other version.;

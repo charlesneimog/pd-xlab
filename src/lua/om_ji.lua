@@ -166,7 +166,7 @@ local function mos_verify(values)
 	local numeric = {}
 	for _, value in ipairs(intervals) do numeric[#numeric + 1] = rnum(value) end
 	local unique = unique_numbers(numeric)
-	if #unique ~= 2 then return "This is not a ji.mos", intervals end
+	if #unique ~= 2 then return "This is not a x.ji.mos", intervals end
 	table.sort(unique)
 	local labels = {}
 	for _, value in ipairs(numeric) do labels[#labels + 1] = math.abs(value - unique[2]) < 1e-9 and "s" or "L" end
@@ -214,12 +214,12 @@ end
 
 local functions = {}
 
-functions["ji.rttom"] = function(ratios, fundamental)
+functions["x.ji.rttom"] = function(ratios, fundamental)
 	fundamental = tonumber(scalar(fundamental)) or 60
 	return recursively(ratios, function(value) return fundamental + 12 * math.log(rnum(value), 2) end)
 end
 
-functions["ji.range-reduce"] = function(notes, low, high)
+functions["x.ji.range-reduce"] = function(notes, low, high)
 	low, high = tonumber(scalar(low)), tonumber(scalar(high))
 	if not low or not high or high - low < 12 then error("range must span at least 12 semitones") end
 	return recursively(notes, function(note)
@@ -229,7 +229,7 @@ functions["ji.range-reduce"] = function(notes, low, high)
 	end)
 end
 
-functions["ji.filter-ac-inst"] = function(notes, tolerance, temperament)
+functions["x.ji.filter-ac-inst"] = function(notes, tolerance, temperament)
 	local result = {}
 	for _, note in ipairs(notes) do
 		if math.abs(nearest_step(note, scalar(temperament)) - note) <= tonumber(scalar(tolerance)) then
@@ -239,7 +239,7 @@ functions["ji.filter-ac-inst"] = function(notes, tolerance, temperament)
 	return result
 end
 
-functions["ji.modulation-notes"] = function(left, right, tolerance)
+functions["x.ji.modulation-notes"] = function(left, right, tolerance)
 	tolerance = tonumber(scalar(tolerance))
 	local result = {}
 	for _, a in ipairs(left) do for _, b in ipairs(right) do
@@ -249,7 +249,7 @@ functions["ji.modulation-notes"] = function(left, right, tolerance)
 	return result
 end
 
-functions["ji.modulation-notes-fund"] = function(left, right, tolerance, temperament)
+functions["x.ji.modulation-notes-fund"] = function(left, right, tolerance, temperament)
 	tolerance = tonumber(scalar(tolerance))
 	local records, shifts = {}, {}
 	for _, a in ipairs(left) do for _, b in ipairs(right) do
@@ -264,18 +264,18 @@ functions["ji.modulation-notes-fund"] = function(left, right, tolerance, tempera
 	return { records, shifts }
 end
 
-functions["ji.rt-octave"] = function(values, range)
+functions["x.ji.rt-octave"] = function(values, range)
 	return recursively(values, function(value) return octave_reduce_one(value, scalar(range)) end)
 end
 
-functions["ji.change-notes"] = function(notes, tuning)
+functions["x.ji.change-notes"] = function(notes, tuning)
 	if type(notes) ~= "table" then return nearest(notes, tuning) end
 	local result = {}
 	for _, note in ipairs(notes) do result[#result + 1] = nearest(note, tuning) end
 	return result
 end
 
-functions["ji.range-change-notes"] = function(notes, tuning, range)
+functions["x.ji.range-change-notes"] = function(notes, tuning, range)
 	local result = {}
 	for _, note in ipairs(notes) do
 		result[#result + 1] = nearest(note, tuning, tonumber(range[1]), tonumber(range[2])) or "nil"
@@ -283,7 +283,7 @@ functions["ji.range-change-notes"] = function(notes, tuning, range)
 	return result
 end
 
-functions["ji.diamond"] = function(limit)
+functions["x.ji.diamond"] = function(limit)
 	limit = integer(scalar(limit), "limit")
 	local identities = {}
 	for value = 1, limit, 2 do identities[#identities + 1] = value end
@@ -297,7 +297,7 @@ functions["ji.diamond"] = function(limit)
 	return { utonal, otonal }
 end
 
-functions["ji.diamond-identity"] = function(identities)
+functions["x.ji.diamond-identity"] = function(identities)
 	local utonal, otonal = {}, {}
 	for _, x in ipairs(identities) do
 		local urow, orow = {}, {}
@@ -307,21 +307,21 @@ functions["ji.diamond-identity"] = function(identities)
 	return { utonal, otonal }
 end
 
-functions["ji.chord-inverse"] = function(chord) return recursively(chord, rinv) end
-functions["ji.cpstoidentity"] = function(sets)
+functions["x.ji.chord-inverse"] = function(chord) return recursively(chord, rinv) end
+functions["x.ji.cpstoidentity"] = function(sets)
 	if type(sets[1]) ~= "table" then return { product(sets) } end
 	local result = {}
 	for _, set in ipairs(sets) do result[#result + 1] = product(set) end
 	return result
 end
-functions["ji.cpstoratio"] = cps_ratios
+functions["x.ji.cpstoratio"] = cps_ratios
 
-functions["ji.mos"] = mos_values
-functions["ji.mos-verify"] = function(values)
+functions["x.ji.mos"] = mos_values
+functions["x.ji.mos-verify"] = function(values)
 	local labels, intervals = mos_verify(values)
 	return { labels, intervals }
 end
-functions["ji.mos-check"] = function(generator, maximum, range, interval_count)
+functions["x.ji.mos-check"] = function(generator, maximum, range, interval_count)
 	local result = {}
 	for stacking = 1, integer(maximum, "maximum stacking") do
 		local _, intervals = mos_verify(mos_values(generator, stacking, range))
@@ -330,7 +330,7 @@ functions["ji.mos-check"] = function(generator, maximum, range, interval_count)
 	end
 	return result
 end
-functions["ji.mos-complementary"] = function(generator, range, maximum)
+functions["x.ji.mos-complementary"] = function(generator, range, maximum)
 	local result = {}
 	for stacking = 2, integer(maximum, "maximum stacking") do
 		local left = select(1, mos_verify(mos_values(generator, stacking, range)))
@@ -344,13 +344,13 @@ functions["ji.mos-complementary"] = function(generator, range, maximum)
 	return result
 end
 
-functions["ji.hexany"] = function(values)
-	if #values ~= 4 then error("ji.hexany expects exactly four identities") end
+functions["x.ji.hexany"] = function(values)
+	if #values ~= 4 then error("x.ji.hexany expects exactly four identities") end
 	return combinations(values, 2)
 end
 
-functions["ji.hexany-triads"] = function(values)
-	if #values ~= 4 then error("ji.hexany-triads expects exactly four identities") end
+functions["x.ji.hexany-triads"] = function(values)
+	if #values ~= 4 then error("x.ji.hexany-triads expects exactly four identities") end
 	local subharmonic, harmonic = {}, {}
 	for _, excluded in ipairs(values) do
 		for _, pair in ipairs(combinations(difference(values, { excluded }), 2)) do
@@ -365,7 +365,7 @@ functions["ji.hexany-triads"] = function(values)
 	return { subharmonic, harmonic }
 end
 
-functions["ji.hexany-connections"] = function(vertex, hexany)
+functions["x.ji.hexany-connections"] = function(vertex, hexany)
 	local result = {}
 	for _, edge in ipairs(hexany) do
 		if contains(edge, vertex[1]) or contains(edge, vertex[2]) then result[#result + 1] = edge end
@@ -373,13 +373,13 @@ functions["ji.hexany-connections"] = function(vertex, hexany)
 	return result
 end
 
-functions["ji.eikosany"] = function(values)
-	if #values ~= 6 then error("ji.eikosany expects exactly six identities") end
+functions["x.ji.eikosany"] = function(values)
+	if #values ~= 6 then error("x.ji.eikosany expects exactly six identities") end
 	return combinations(values, 3)
 end
 
-functions["ji.eikosany-triads"] = function(values)
-	if #values ~= 6 then error("ji.eikosany-triads expects exactly six identities") end
+functions["x.ji.eikosany-triads"] = function(values)
+	if #values ~= 6 then error("x.ji.eikosany-triads expects exactly six identities") end
 	local subharmonic, harmonic = {}, {}
 	for _, vertex in ipairs(combinations(values, 3)) do
 		local complement = difference(values, vertex)
@@ -403,8 +403,8 @@ functions["ji.eikosany-triads"] = function(values)
 	return { subharmonic, harmonic }
 end
 
-functions["ji.eikosany-tetrads"] = function(values)
-	if #values ~= 6 then error("ji.eikosany-tetrads expects exactly six identities") end
+functions["x.ji.eikosany-tetrads"] = function(values)
+	if #values ~= 6 then error("x.ji.eikosany-tetrads expects exactly six identities") end
 	local subharmonic, harmonic = {}, {}
 	for _, tetrad in ipairs(combinations(values, 4)) do
 		subharmonic[#subharmonic + 1] = cps_ratios(combinations(tetrad, 3))
@@ -418,7 +418,7 @@ functions["ji.eikosany-tetrads"] = function(values)
 	return { subharmonic, harmonic }
 end
 
-functions["ji.eikosany-connections"] = function(vertex, eikosany)
+functions["x.ji.eikosany-connections"] = function(vertex, eikosany)
 	local result = {}
 	for _, item in ipairs(eikosany) do
 		local shared = 0; for _, value in ipairs(vertex) do if contains(item, value) then shared = shared + 1 end end
@@ -427,7 +427,7 @@ functions["ji.eikosany-connections"] = function(vertex, eikosany)
 	return result
 end
 
-functions["ji.interval-sob"] = function(interval, exponents)
+functions["x.ji.interval-sob"] = function(interval, exponents)
 	local utonal, otonal = {}, {}
 	for _, exponent in ipairs(exponents) do
 		utonal[#utonal + 1] = rpow(rinv(interval), exponent)
@@ -435,12 +435,12 @@ functions["ji.interval-sob"] = function(interval, exponents)
 	end
 	return { utonal, otonal }
 end
-functions["ji.arith-mean"] = function(low, high) return rdiv(radd(low, high), 2) end
-functions["ji.arith-mean-sob"] = function(low, high)
+functions["x.ji.arith-mean"] = function(low, high) return rdiv(radd(low, high), 2) end
+functions["x.ji.arith-mean-sob"] = function(low, high)
 	local mean = rdiv(radd(low, high), 2)
 	return { rat(low), rdiv(high, mean), rmul(low, mean), rat(high) }
 end
-functions["ji.johnston-sob"] = function(interval, stacking, fundamental)
+functions["x.ji.johnston-sob"] = function(interval, stacking, fundamental)
 	stacking, fundamental = integer(stacking, "stacking"), tonumber(fundamental)
 	local semitones = 12 * math.log(rnum(interval), 2)
 	local result = {}; for exponent = 1, stacking do result[#result + 1] = fundamental - semitones * exponent end
@@ -455,7 +455,7 @@ functions["ji.choose"] = function(values, positions)
 	for _, position in ipairs(positions) do result[#result + 1] = values[integer(position, "position")] end
 	return result
 end
-functions["ji.prime-decomposition"] = function(values)
+functions["x.ji.prime-decomposition"] = function(values)
 	if type(values) ~= "table" then values = { values } end
 	local all, odd = {}, {}
 	for _, value in ipairs(values) do
@@ -470,7 +470,7 @@ functions["ji.prime-decomposition"] = function(values)
 	end
 	return { all, odd }
 end
-functions["ji.mk-temperament"] = function(fundamental, interval, divisions)
+functions["x.ji.mk-temperament"] = function(fundamental, interval, divisions)
 	fundamental, divisions = tonumber(fundamental), integer(divisions, "divisions")
 	local step = 12 * math.log(rnum(interval), 2) / divisions
 	local result = { fundamental }
@@ -508,37 +508,37 @@ end
 functions["ji.play-om#"] = function(voice) return { "play", voice_events(voice) } end
 
 local specs = {
-	["ji.rttom"] = { { "1/1", "11/8", "7/4" }, 60 },
-	["ji.range-reduce"] = { { 48, 72, 60 }, 60, 79.02 },
-	["ji.filter-ac-inst"] = { { 60, 65.30, 72.03, 50.49 }, 0.10, 2 },
-	["ji.modulation-notes"] = { { 60, 65.30 }, { 72.03, 50.49 }, 0.02 },
-	["ji.modulation-notes-fund"] = { defaults = { { 60, 65.30 }, { 72.03, 50.49 }, 0.10, 4 }, outlets = 2 },
-	["ji.rt-octave"] = { { "1/3", 1, "5/3" }, 2 },
-	["ji.change-notes"] = { { 60, 61, 62 }, { 60, 64.98, 69.96, 62.94, 67.92 } },
-	["ji.range-change-notes"] = { { 60, 61, 62 }, { 60, 64.98, 69.96, 62.94, 67.92 }, { 0.30, 5 } },
-	["ji.diamond"] = { defaults = { 11 }, outlets = 2 },
-	["ji.diamond-identity"] = { defaults = { { 11, 19, 97 } }, outlets = 2 },
-	["ji.chord-inverse"] = { { "1/1", "3/2", "5/4" } },
-	["ji.cpstoidentity"] = { { { 1, 3 }, { 1, 5 }, { 3, 5 } } },
-	["ji.cpstoratio"] = { { 1, 3, 5, 7 } },
-	["ji.mos"] = { "4/3", 11, 2 },
-	["ji.mos-verify"] = { defaults = { { 1, "4/3", "16/9", 2 } }, outlets = 2 },
-	["ji.mos-check"] = { "4/3", 60, 2, 2 },
-	["ji.mos-complementary"] = { "3/2", 4, 50 },
-	["ji.hexany"] = { { 5, 7, 13, 17 } },
-	["ji.hexany-triads"] = { defaults = { { 1, 3, 5, 7 } }, outlets = 2 },
-	["ji.hexany-connections"] = { { 3, 13 }, { { 3, 5 }, { 3, 13 }, { 5, 13 }, { 3, 21 }, { 5, 21 }, { 13, 21 } } },
-	["ji.eikosany"] = { { 1, 3, 5, 7, 9, 11 } },
-	["ji.eikosany-triads"] = { defaults = { { 1, 3, 5, 7, 9, 11 } }, outlets = 2 },
-	["ji.eikosany-tetrads"] = { defaults = { { 1, 3, 5, 7, 9, 11 } }, outlets = 2 },
-	["ji.eikosany-connections"] = { { 1, 3, 9 }, combinations({ 1, 3, 5, 7, 9, 11 }, 3) },
-	["ji.interval-sob"] = { defaults = { "11/8", { 2, 3, 7, 11, 12 } }, outlets = 2 },
-	["ji.arith-mean"] = { "1/1", "2/1" },
-	["ji.arith-mean-sob"] = { "1/1", "5/4" },
-	["ji.johnston-sob"] = { "3/2", 3, 72 },
+	["x.ji.rttom"] = { { "1/1", "11/8", "7/4" }, 60 },
+	["x.ji.range-reduce"] = { { 48, 72, 60 }, 60, 79.02 },
+	["x.ji.filter-ac-inst"] = { { 60, 65.30, 72.03, 50.49 }, 0.10, 2 },
+	["x.ji.modulation-notes"] = { { 60, 65.30 }, { 72.03, 50.49 }, 0.02 },
+	["x.ji.modulation-notes-fund"] = { defaults = { { 60, 65.30 }, { 72.03, 50.49 }, 0.10, 4 }, outlets = 2 },
+	["x.ji.rt-octave"] = { { "1/3", 1, "5/3" }, 2 },
+	["x.ji.change-notes"] = { { 60, 61, 62 }, { 60, 64.98, 69.96, 62.94, 67.92 } },
+	["x.ji.range-change-notes"] = { { 60, 61, 62 }, { 60, 64.98, 69.96, 62.94, 67.92 }, { 0.30, 5 } },
+	["x.ji.diamond"] = { defaults = { 11 }, outlets = 2 },
+	["x.ji.diamond-identity"] = { defaults = { { 11, 19, 97 } }, outlets = 2 },
+	["x.ji.chord-inverse"] = { { "1/1", "3/2", "5/4" } },
+	["x.ji.cpstoidentity"] = { { { 1, 3 }, { 1, 5 }, { 3, 5 } } },
+	["x.ji.cpstoratio"] = { { 1, 3, 5, 7 } },
+	["x.ji.mos"] = { "4/3", 11, 2 },
+	["x.ji.mos-verify"] = { defaults = { { 1, "4/3", "16/9", 2 } }, outlets = 2 },
+	["x.ji.mos-check"] = { "4/3", 60, 2, 2 },
+	["x.ji.mos-complementary"] = { "3/2", 4, 50 },
+	["x.ji.hexany"] = { { 5, 7, 13, 17 } },
+	["x.ji.hexany-triads"] = { defaults = { { 1, 3, 5, 7 } }, outlets = 2 },
+	["x.ji.hexany-connections"] = { { 3, 13 }, { { 3, 5 }, { 3, 13 }, { 5, 13 }, { 3, 21 }, { 5, 21 }, { 13, 21 } } },
+	["x.ji.eikosany"] = { { 1, 3, 5, 7, 9, 11 } },
+	["x.ji.eikosany-triads"] = { defaults = { { 1, 3, 5, 7, 9, 11 } }, outlets = 2 },
+	["x.ji.eikosany-tetrads"] = { defaults = { { 1, 3, 5, 7, 9, 11 } }, outlets = 2 },
+	["x.ji.eikosany-connections"] = { { 1, 3, 9 }, combinations({ 1, 3, 5, 7, 9, 11 }, 3) },
+	["x.ji.interval-sob"] = { defaults = { "11/8", { 2, 3, 7, 11, 12 } }, outlets = 2 },
+	["x.ji.arith-mean"] = { "1/1", "2/1" },
+	["x.ji.arith-mean-sob"] = { "1/1", "5/4" },
+	["x.ji.johnston-sob"] = { "3/2", 3, 72 },
 	["ji.choose"] = { { 1, 2, 3, 4, 5 }, 2 },
-	["ji.prime-decomposition"] = { defaults = { { 9, 18, 172 } }, outlets = 2 },
-	["ji.mk-temperament"] = { 60, 2, 24 },
+	["x.ji.prime-decomposition"] = { defaults = { { 9, 18, 172 } }, outlets = 2 },
+	["x.ji.mk-temperament"] = { 60, 2, 24 },
 	["ji.play-om#"] = { { "voice", {}, {}, {}, {} } },
 	["ji.voicetotext"] = { { "voice", {}, {}, {}, {} } },
 }

@@ -3,7 +3,7 @@
 #X declare -lib py4pd;
 #X declare -lib neimog;
 #X declare -path build;
-#X obj 7 155 py.train, f 28;
+#X obj 7 155 x.train, f 28;
 #N canvas 0 0 925 1132 config 1;
 #X obj 4 50 declare -lib timbreIDLib;
 #X obj 4 26 declare -lib py4pd;

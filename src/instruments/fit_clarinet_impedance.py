@@ -101,7 +101,7 @@ def fit_residues_exact(freqs_hz, zhat, poles, weight_floor=0.05):
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Fit measured clarinet input impedance to clarinet~ modal poles/residues"
+        description="Fit measured clarinet input impedance to x.clarinet~ modal poles/residues"
     )
     parser.add_argument("csv", help="CSV with frequency_hz,z_real,z_imag")
     parser.add_argument("--modes", type=int, default=16, help="complex pole pairs (max 32)")

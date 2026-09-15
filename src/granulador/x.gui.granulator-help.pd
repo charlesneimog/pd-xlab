@@ -16,11 +16,11 @@
 #X obj 56 127 tgl 18 0 empty empty empty 0 -9 0 10 #fcfcfc #000000 #000000 0 1;
 #X obj 9 495 dac~, f 14;
 #X obj 9 304 x.gui.granulator array;
-#X obj 154 507 infinite.record~ array;
+#X obj 154 507 x.infinite.record~ array;
 #X obj 154 445 adc~ 1;
 #X obj 199 445 tgl 18 0 empty empty empty 0 -9 0 10 #fcfcfc #000000 #000000 0 1;
 #X msg 71 190 grains 20;
-#X obj 9 458 clone granulator 21;
+#X obj 9 458 clone x.granulator 21;
 #X msg 137 190 size 1024 2048;
 #X msg 135 215 silence 512 1024;
 #X connect 1 0 10 0;

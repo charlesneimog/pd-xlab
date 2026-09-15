@@ -11,7 +11,7 @@
 #X obj 180 133 loadbang;
 #X obj 110 190 int 0;
 #X msg 180 155 -18;
-#X obj 215 306 infinite.record~;
+#X obj 215 306 x.infinite.record~;
 #X obj 178 6 declare -lib xlab;
 #X obj 308 208 symbol;
 #X msg 225 262 start;

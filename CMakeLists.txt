@@ -89,48 +89,48 @@ include_directories("${CMAKE_BINARY_DIR}/fftw-3.3.10/api/")
 # ╭──────────────────────────────────────╮
 # │               Objects                │
 # ╰──────────────────────────────────────╯
-pd_add_external(entropy "${CMAKE_CURRENT_SOURCE_DIR}/src/statistics/entropy.cpp")
-pd_add_external(euclidean "${CMAKE_CURRENT_SOURCE_DIR}/src/statistics/euclidean.cpp")
-pd_add_external(kalman "${CMAKE_CURRENT_SOURCE_DIR}/src/statistics/kalman.cpp")
-pd_add_external(kl "${CMAKE_CURRENT_SOURCE_DIR}/src/statistics/kullback-leibler.cpp")
+pd_add_external(x.entropy "${CMAKE_CURRENT_SOURCE_DIR}/src/statistics/x.entropy.cpp")
+pd_add_external(x.euclidean "${CMAKE_CURRENT_SOURCE_DIR}/src/statistics/x.euclidean.cpp")
+pd_add_external(x.kalman "${CMAKE_CURRENT_SOURCE_DIR}/src/statistics/x.kalman.cpp")
+pd_add_external(x.kl "${CMAKE_CURRENT_SOURCE_DIR}/src/statistics/x.kl.cpp")
 pd_add_external(
-    xconv~
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/fft/xconvolve~.cpp"
+    x.conv~
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/fft/x.conv~.cpp"
     LINK_LIBRARIES
     fftw3)
 
 # array
-pd_add_external(a.rotate "${CMAKE_CURRENT_SOURCE_DIR}/src/arrays/a.rotate.cpp")
-pd_add_external(a.invert "${CMAKE_CURRENT_SOURCE_DIR}/src/arrays/a.invert.cpp")
-pd_add_external(a.sum "${CMAKE_CURRENT_SOURCE_DIR}/src/arrays/a.sum.cpp")
+pd_add_external(x.array.rotate "${CMAKE_CURRENT_SOURCE_DIR}/src/arrays/x.array.rotate.cpp")
+pd_add_external(x.array.invert "${CMAKE_CURRENT_SOURCE_DIR}/src/arrays/x.array.invert.cpp")
+pd_add_external(x.array.sum "${CMAKE_CURRENT_SOURCE_DIR}/src/arrays/x.array.sum.cpp")
 
 # manipulations
-pd_add_external(infinite.record~ "${CMAKE_CURRENT_SOURCE_DIR}/src/utilities/infinite.record.cpp")
-pd_add_external(fdn~ "${CMAKE_CURRENT_SOURCE_DIR}/src/reverb/fdn~.cpp")
+pd_add_external(x.infinite.record~ "${CMAKE_CURRENT_SOURCE_DIR}/src/utilities/x.infinite.record~.cpp")
+pd_add_external(x.fdn~ "${CMAKE_CURRENT_SOURCE_DIR}/src/reverb/x.fdn~.cpp")
 set_target_properties(
-    fdn_tilde
+    x.fdn_tilde
     PROPERTIES CXX_STANDARD 17
                CXX_STANDARD_REQUIRED ON
                CXX_EXTENSIONS OFF)
 
 # instruments
-pd_add_external(besseldrum~ "${CMAKE_CURRENT_SOURCE_DIR}/src/instruments/besseldrum~.cpp")
+pd_add_external(x.besseldrum~ "${CMAKE_CURRENT_SOURCE_DIR}/src/instruments/x.besseldrum~.cpp")
 set_target_properties(
-    besseldrum_tilde
+    x.besseldrum_tilde
     PROPERTIES CXX_STANDARD 17
                CXX_STANDARD_REQUIRED ON
                CXX_EXTENSIONS OFF)
 if(EMSCRIPTEN)
-    target_compile_options(besseldrum_tilde PRIVATE "-sUSE_BOOST_HEADERS=1")
-    target_link_options(besseldrum_tilde PRIVATE "-sUSE_BOOST_HEADERS=1")
+    target_compile_options(x.besseldrum_tilde PRIVATE "-sUSE_BOOST_HEADERS=1")
+    target_link_options(x.besseldrum_tilde PRIVATE "-sUSE_BOOST_HEADERS=1")
 else()
     find_package(Boost CONFIG REQUIRED)
-    target_link_libraries(besseldrum_tilde PRIVATE Boost::headers)
+    target_link_libraries(x.besseldrum_tilde PRIVATE Boost::headers)
 endif()
 
 # Memoria da Chuva
-pd_add_external(rain~ "${CMAKE_CURRENT_SOURCE_DIR}/src/others/rain~.cpp")
-pd_add_external(rperlin "${CMAKE_CURRENT_SOURCE_DIR}/src/others/rperlin.cpp")
+pd_add_external(x.rain~ "${CMAKE_CURRENT_SOURCE_DIR}/src/others/x.rain~.cpp")
+pd_add_external(x.rperlin "${CMAKE_CURRENT_SOURCE_DIR}/src/others/x.rperlin.cpp")
 
 # ╭──────────────────────────────────────╮
 # │                 stk                  │
@@ -165,12 +165,18 @@ if(TARGET stk)
 endif()
 
 pd_add_external(
-    clarinet~
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/instruments/clarinet~.cpp"
+    x.clarinet~
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/instruments/x.clarinet~.cpp"
     LINK_LIBRARIES
     stk)
 
-target_include_directories(clarinet_tilde PRIVATE "${stk_SOURCE_DIR}/include")
+target_include_directories(x.clarinet_tilde PRIVATE "${stk_SOURCE_DIR}/include")
+
+# ╭──────────────────────────────────────╮
+# │                Utils                 │
+# ╰──────────────────────────────────────╯
+pd_add_external(x.darray~ "${CMAKE_CURRENT_SOURCE_DIR}/src/utilities/x.darray~.cpp")
+pd_add_external(x.cputime "${CMAKE_CURRENT_SOURCE_DIR}/src/utilities/x.cputime.cpp")
 
 # ╭──────────────────────────────────────╮
 # │                Reverb                │
@@ -180,8 +186,8 @@ add_library(zitarev1 STATIC "${zita-rev1_SOURCE_DIR}/source/pareq.cpp;${zita-rev
 set_target_properties(zitarev1 PROPERTIES POSITION_INDEPENDENT_CODE ON)
 target_include_directories(zitarev1 PUBLIC "${zita-rev1_SOURCE_DIR}/source")
 pd_add_external(
-    zita.rev~
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/reverb/zita.rev~.cpp"
+    x.zita.rev~
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/reverb/x.zita.rev~.cpp"
     LINK_LIBRARIES
     zitarev1)
 
@@ -196,8 +202,8 @@ target_include_directories(loris PRIVATE ${CMAKE_BINARY_DIR}/fftw-3.3.10/api)
 
 # freeze
 pd_add_external(
-    lfreeze~
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/fft/lfreeze~.cpp"
+    x.lfreeze~
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/fft/x.lfreeze~.cpp"
     LINK_LIBRARIES
     loris)
 
@@ -205,62 +211,62 @@ pd_add_external(
 pd_add_external(xlab "${CMAKE_CURRENT_SOURCE_DIR}/src/xlab.cpp")
 
 pd_add_external(
-    xfreeze~
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/fft/xfreeze~.cpp"
+    x.freeze~
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/fft/x.freeze~.cpp"
     LINK_LIBRARIES
     fftw3)
 
 pd_add_external(
-    gfreeze~
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/fft/gfreeze~.cpp"
+    x.gfreeze~
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/fft/x.gfreeze~.cpp"
     LINK_LIBRARIES
     fftw3)
 
-target_include_directories(xfreeze_tilde PRIVATE ${CMAKE_BINARY_DIR}/fftw-3.3.10/api)
-target_include_directories(gfreeze_tilde PRIVATE ${CMAKE_BINARY_DIR}/fftw-3.3.10/api)
+target_include_directories(x.freeze_tilde PRIVATE ${CMAKE_BINARY_DIR}/fftw-3.3.10/api)
+target_include_directories(x.gfreeze_tilde PRIVATE ${CMAKE_BINARY_DIR}/fftw-3.3.10/api)
 # include_directories(${CMAKE_BINARY_DIR}/)
-pd_add_external(xclick~ "${CMAKE_CURRENT_SOURCE_DIR}/src/utilities/xclick~.cpp")
-pd_add_external(xcurve~ "${CMAKE_CURRENT_SOURCE_DIR}/src/utilities/xcurve~.cpp")
+pd_add_external(x.click "${CMAKE_CURRENT_SOURCE_DIR}/src/utilities/x.click.cpp")
+pd_add_external(x.curve~ "${CMAKE_CURRENT_SOURCE_DIR}/src/utilities/x.curve~.cpp")
 set_target_properties(
-    xcurve_tilde
+    x.curve_tilde
     PROPERTIES CXX_STANDARD 17
                CXX_STANDARD_REQUIRED ON
                CXX_EXTENSIONS OFF)
 
-set(NW_GVERB_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/src/reverb/nw.gverb_tilde.cpp"
+set(NW_GVERB_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/src/reverb/x.nw.gverb~.cpp"
                      "${CMAKE_CURRENT_SOURCE_DIR}/src/reverb/reverb_bb.cpp")
 pd_add_external(
-    nw.gverb~
+    x.nw.gverb~
     "${NW_GVERB_SOURCES}"
     TARGET
-    nw_gverb_tilde)
+    x.nw.gverb_tilde)
 
 # Synth
 cpmaddpackage("gh:schellingb/TinySoundFont#main")
-pd_add_external(tsf~ "${CMAKE_CURRENT_SOURCE_DIR}/src/synth/tsf~.cpp")
-target_include_directories(tsf_tilde PRIVATE ${TinySoundFont_SOURCE_DIR}/)
+pd_add_external(x.tsf~ "${CMAKE_CURRENT_SOURCE_DIR}/src/synth/x.tsf~.cpp")
+target_include_directories(x.tsf_tilde PRIVATE ${TinySoundFont_SOURCE_DIR}/)
 set_target_properties(
-    tsf_tilde
+    x.tsf_tilde
     PROPERTIES CXX_STANDARD 17
                CXX_STANDARD_REQUIRED ON
                CXX_EXTENSIONS OFF)
 
 # Single objects maintained as part of xlab.
 if(NOT EMSCRIPTEN)
-    add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/src/single/ambi~" "${CMAKE_BINARY_DIR}/single/ambi")
+    add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/src/single/x.ambi~" "${CMAKE_BINARY_DIR}/single/ambi")
 endif()
-add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/src/single/pv~" "${CMAKE_BINARY_DIR}/single/pv")
-add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/src/single/mar~" "${CMAKE_BINARY_DIR}/single/mar")
-add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/src/single/dragonfly~" "${CMAKE_BINARY_DIR}/single/dragonfly")
+add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/src/single/x.pv~" "${CMAKE_BINARY_DIR}/single/pv")
+add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/src/single/x.mar~" "${CMAKE_BINARY_DIR}/single/mar")
+add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/src/single/x.dragonfly~" "${CMAKE_BINARY_DIR}/single/dragonfly")
 
 # Collections maintained as part of xlab.
 if(NOT APPLE)
     add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/src/mutable" "${CMAKE_BINARY_DIR}/mutable")
 endif()
 
-if(NOT TARGET onsetsds_tilde)
-    pd_add_external(onsetsds~
-                    "${CMAKE_CURRENT_SOURCE_DIR}/src/mir/onsetsds.c;${CMAKE_CURRENT_SOURCE_DIR}/src/mir/onsetsds~.c")
+if(NOT TARGET x.onsetsds_tilde)
+    pd_add_external(x.onsetsds~
+                    "${CMAKE_CURRENT_SOURCE_DIR}/src/mir/onsetsds.c;${CMAKE_CURRENT_SOURCE_DIR}/src/mir/x.onsetsds~.c")
 endif()
 
 # ╭──────────────────────────────────────╮
@@ -309,22 +315,29 @@ target_link_libraries(xlab PRIVATE lua)
 # ╭──────────────────────────────────────╮
 # │ Lua, Python Objects + Audio and Data │
 # ╰──────────────────────────────────────╯
-file(GLOB LUA_OBJECTS "${CMAKE_CURRENT_SOURCE_DIR}/src/lua/*.pd_lua")
+file(GLOB LUA_OBJECTS CONFIGURE_DEPENDS
+     "${CMAKE_CURRENT_SOURCE_DIR}/src/lua/*.pd_lua"
+     "${CMAKE_CURRENT_SOURCE_DIR}/src/granulador/*.pd_lua")
 pd_add_datafile(xlab "${LUA_OBJECTS}")
-file(GLOB JI_HELP_FILES "${CMAKE_CURRENT_SOURCE_DIR}/src/lua/ji*-help.pd")
-pd_add_datafile(xlab "${JI_HELP_FILES}")
-pd_add_datafile(xlab "${CMAKE_CURRENT_SOURCE_DIR}/src/lua/l.gain~-help.pd")
-pd_add_datafile(xlab "${CMAKE_CURRENT_SOURCE_DIR}/src/lua/rhythm-help.pd")
+file(GLOB_RECURSE XLAB_HELP_FILES CONFIGURE_DEPENDS
+     "${CMAKE_CURRENT_SOURCE_DIR}/src/x.*-help.pd"
+     "${CMAKE_CURRENT_SOURCE_DIR}/resources/x.*-help.pd")
+pd_add_datafile(xlab "${XLAB_HELP_FILES}")
 pd_add_datafile(xlab "${CMAKE_CURRENT_SOURCE_DIR}/src/lua/sieve.lua")
 pd_add_datafile(xlab "${CMAKE_CURRENT_SOURCE_DIR}/src/lua/om_ji.lua")
 
-file(GLOB PYTHON_OBJECTS "${CMAKE_CURRENT_SOURCE_DIR}/src/python/*.pd_py")
+file(GLOB PYTHON_OBJECTS CONFIGURE_DEPENDS
+     "${CMAKE_CURRENT_SOURCE_DIR}/src/python/*.pd_py"
+     "${CMAKE_CURRENT_SOURCE_DIR}/resources/ai/*.pd_py")
 pd_add_datafile(xlab "${PYTHON_OBJECTS}")
 
 file(GLOB AUDIO_FILES "${CMAKE_CURRENT_SOURCE_DIR}/resources/audios/*.wav")
 pd_add_datafile(xlab "${AUDIO_FILES}")
 
-file(GLOB ABS_FILES "${CMAKE_CURRENT_SOURCE_DIR}/resources/abs/*.pd")
+file(GLOB ABS_FILES CONFIGURE_DEPENDS
+     "${CMAKE_CURRENT_SOURCE_DIR}/resources/abs/*.pd"
+     "${CMAKE_CURRENT_SOURCE_DIR}/resources/x.cphasevoc~.pd"
+     "${CMAKE_CURRENT_SOURCE_DIR}/src/granulador/x.granulator.pd")
 pd_add_datafile(xlab "${ABS_FILES}")
 pd_add_datafile(xlab "${DDDD_LUA}")
 
@@ -342,24 +355,24 @@ add_custom_target(
 add_dependencies(
     edit_files # target
     # fft
-    xfreeze_tilde
-    gfreeze_tilde
+    x.freeze_tilde
+    x.gfreeze_tilde
     # lua
     upic
     orchidea
     bhack
     # single
-    pv_tilde
-    mar_tilde
-    dragonfly_tilde
-    besseldrum_tilde
-    # # mutable elements_tilde rings_tilde synth
-    tsf_tilde)
+    x.pv_tilde
+    x.mar_tilde
+    x.dragonfly_tilde
+    x.besseldrum_tilde
+    # # mutable x.elements_tilde x.rings_tilde synth
+    x.tsf_tilde)
 
 if(NOT EMSCRIPTEN)
     add_dependencies(
         edit_files
-        ambi_tilde
+        x.ambi_tilde
         py4pd
         lua)
 endif()
