@@ -227,7 +227,7 @@ pd_add_external(
 target_include_directories(x.freeze_tilde PRIVATE ${CMAKE_BINARY_DIR}/fftw-3.3.10/api)
 target_include_directories(x.gfreeze_tilde PRIVATE ${CMAKE_BINARY_DIR}/fftw-3.3.10/api)
 # include_directories(${CMAKE_BINARY_DIR}/)
-pd_add_external(x.click "${CMAKE_CURRENT_SOURCE_DIR}/src/utilities/x.click.cpp")
+pd_add_external(x.click~ "${CMAKE_CURRENT_SOURCE_DIR}/src/utilities/x.click~.cpp")
 pd_add_external(x.curve~ "${CMAKE_CURRENT_SOURCE_DIR}/src/utilities/x.curve~.cpp")
 set_target_properties(
     x.curve_tilde

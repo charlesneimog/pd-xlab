@@ -144,8 +144,8 @@ static void *xclick_new(t_symbol *s, int ac, t_atom *av) {
 }
 
 // ─────────────────────────────────────
-extern "C" void setup_x0x2eclick(void) {
-    xclick_class = class_new(gensym("x.click"), (t_newmethod)xclick_new, 0, sizeof(t_xclick),
+extern "C" void setup_x0x2eclick_tilde(void) {
+    xclick_class = class_new(gensym("x.click~"), (t_newmethod)xclick_new, 0, sizeof(t_xclick),
                              CLASS_DEFAULT, A_GIMME, 0);
 
     class_addbang(xclick_class, (t_method)xclick_bang);

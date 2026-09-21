@@ -101,7 +101,6 @@ static void xdarray_create(t_xdarray *x, t_symbol *name, t_floatarg fsize) {
 
     buffer->gl_loading = 0;
     buffer->gl_edit = 0;
-
     entry->buffer = buffer;
     entry->graph = graph;
     entry->array = array;
