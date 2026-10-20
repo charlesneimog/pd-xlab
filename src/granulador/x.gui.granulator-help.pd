@@ -1,12 +1,12 @@
-#N canvas 0 0 925 1131 10;
+#N canvas 0 0 466 568 10;
 #X declare -lib xlab;
 #X obj 6 4 declare -lib xlab;
 #X msg 9 127 reload;
 #N canvas 0 0 925 1131 (subpatch) 0;
-#X array array 279296 float 2;
+#X array array 662784 float 2;
 #A color 0;
 #A width 2;
-#X coords 0 1 279296 -1 200 140 1;
+#X coords 0 1 662784 -1 200 140 1;
 #X restore 259 19 graph;
 #X obj 9 77 soundfiler;
 #X msg 9 48 read -resize ~/test.wav array;
@@ -22,7 +22,7 @@
 #X msg 71 190 grains 20;
 #X obj 9 458 clone x.granulator 21;
 #X msg 137 190 size 1024 2048;
-#X msg 135 215 silence 512 1024;
+#X msg 135 215 silence 1024 10024;
 #X connect 1 0 10 0;
 #X connect 4 0 3 0;
 #X connect 5 0 6 0;
