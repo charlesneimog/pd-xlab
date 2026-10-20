@@ -1,3 +1,0 @@
-#N canvas 0 0 925 1131 10;
-#X declare -lib xlab;
-#X obj 10 4 declare -lib xlab;
