@@ -170,6 +170,13 @@ pd_add_external(x.cputime "${CMAKE_CURRENT_SOURCE_DIR}/src/utilities/x.cputime.c
 # ╭──────────────────────────────────────╮
 # │                Reverb                │
 # ╰──────────────────────────────────────╯
+include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/CloudSeedCore.cmake")
+pd_add_external(x.cloudseed.rev~ "${CMAKE_CURRENT_SOURCE_DIR}/src/reverb/x.cloudseed.rev~.cpp"
+                TARGET x.cloudseed.rev_tilde LINK_LIBRARIES cloudseedcore)
+set_target_properties(x.cloudseed.rev_tilde PROPERTIES CXX_STANDARD 14 CXX_STANDARD_REQUIRED ON CXX_EXTENSIONS OFF)
+pd_add_datafile(x.cloudseed.rev_tilde "${CLOUDSEED_LICENSE_FILE}")
+pd_add_datafile(x.cloudseed.rev_tilde "${CMAKE_CURRENT_SOURCE_DIR}/resources/x.cloudseed.rev~-help.pd")
+
 cpmaddpackage("gh:PelleJuul/zita-rev1#master")
 add_library(zitarev1 STATIC "${zita-rev1_SOURCE_DIR}/source/pareq.cpp;${zita-rev1_SOURCE_DIR}/source/reverb.cpp")
 set_target_properties(zitarev1 PROPERTIES POSITION_INDEPENDENT_CODE ON)
@@ -187,16 +194,15 @@ target_include_directories(loris PRIVATE ${CMAKE_BINARY_DIR}/fftw-3.3.10/api)
 
 # freeze
 pd_add_external(x.lfreeze~ "${CMAKE_CURRENT_SOURCE_DIR}/src/fft/x.lfreeze~.cpp" LINK_LIBRARIES loris)
-
-# main object
+# Loris exposes std::auto_ptr in its Analyzer header (removed in C++17).
+set_target_properties(x.lfreeze_tilde PROPERTIES CXX_STANDARD 14 CXX_STANDARD_REQUIRED ON CXX_EXTENSIONS OFF)
+if(NOT EMSCRIPTEN)
+    find_package(Threads REQUIRED)
+    target_link_libraries(x.lfreeze_tilde PRIVATE Threads::Threads)
+endif()
 pd_add_external(xlab "${CMAKE_CURRENT_SOURCE_DIR}/src/xlab.cpp")
 
-pd_add_external(x.freeze~ "${CMAKE_CURRENT_SOURCE_DIR}/src/fft/x.freeze~.cpp" LINK_LIBRARIES fftw3)
 
-pd_add_external(x.gfreeze~ "${CMAKE_CURRENT_SOURCE_DIR}/src/fft/x.gfreeze~.cpp" LINK_LIBRARIES fftw3)
-
-target_include_directories(x.freeze_tilde PRIVATE ${CMAKE_BINARY_DIR}/fftw-3.3.10/api)
-target_include_directories(x.gfreeze_tilde PRIVATE ${CMAKE_BINARY_DIR}/fftw-3.3.10/api)
 # include_directories(${CMAKE_BINARY_DIR}/)
 pd_add_external(x.click~ "${CMAKE_CURRENT_SOURCE_DIR}/src/utilities/x.click~.cpp")
 pd_add_external(x.curve~ "${CMAKE_CURRENT_SOURCE_DIR}/src/utilities/x.curve~.cpp")
@@ -300,10 +306,11 @@ file(GLOB LUA_OBJECTS CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/src/lua/*.p
      "${CMAKE_CURRENT_SOURCE_DIR}/src/granulador/*.pd_lua")
 pd_add_datafile(xlab "${LUA_OBJECTS}")
 file(GLOB_RECURSE XLAB_HELP_FILES CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/src/x.*-help.pd"
+     "${CMAKE_CURRENT_SOURCE_DIR}/src/stolen/*-help.pd"
      "${CMAKE_CURRENT_SOURCE_DIR}/resources/x.*-help.pd")
 pd_add_datafile(xlab "${XLAB_HELP_FILES}")
-pd_add_datafile(xlab "${CMAKE_CURRENT_SOURCE_DIR}/src/lua/sieve.lua")
-pd_add_datafile(xlab "${CMAKE_CURRENT_SOURCE_DIR}/src/lua/om_ji.lua")
+pd_add_datafile(xlab "${CMAKE_CURRENT_SOURCE_DIR}/src/sieves/sieve.lua")
+pd_add_datafile(xlab "${CMAKE_CURRENT_SOURCE_DIR}/src/microtonal/om_ji.lua")
 
 file(GLOB PYTHON_OBJECTS CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/src/python/*.pd_py"
      "${CMAKE_CURRENT_SOURCE_DIR}/resources/ai/*.pd_py")
@@ -331,9 +338,7 @@ add_custom_target(
 
 add_dependencies(
     edit_files # target
-    # fft
-    x.freeze_tilde
-    x.gfreeze_tilde
+
     # lua
     upic
     orchidea

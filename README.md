@@ -74,6 +74,29 @@ cmake --build build
 
 Compiled Pd objects and binaries will be available in the output directory (`build/xlab`).
 
+### CloudSeed reverb
+
+`[x.cloudseed.rev~]` uses the MIT-licensed DSP from
+[Ghost Note Audio's CloudSeedCore](https://github.com/GhostNoteAudio/CloudSeedCore).
+CMake fetches a pinned source revision and builds it with `pd_add_external`:
+
+```bash
+cmake -S . -B build
+cmake --build build --target x.cloudseed.rev_tilde
+```
+
+Connect stereo audio to its two signal inputs; the two outputs are left/right.
+The optional creation argument sets `mix` (0 = dry, 1 = wet, default 1).
+It starts with Dark Plate and `DryOut` muted. Send `LateLineDecay 0.63` or
+`param LateLineDecay 0.63` to change a parameter on CloudSeedCore's normalized
+0–1 scale. `param 28 0.63` uses the matching upstream index. `parameters` prints
+all 45 names, indices, current values, and scaled values in the Pd console.
+`clear` erases the tail; `reset` restores the starting preset and `mix 1`.
+See `x.cloudseed.rev~-help.pd` for a playable example. Supported sample rates
+are 8–192 kHz; core processing uses 32-bit floats in either Pd sample precision.
+This independent Pd integration is not a Ghost Note Audio product. Its MIT
+notice is included as `CloudSeedCore-LICENSE.txt` in the built package.
+
 ### Publish to Deken
 
 Set the repository's `DEKEN_PASSWORD` Actions secret for the `charlesneimog`

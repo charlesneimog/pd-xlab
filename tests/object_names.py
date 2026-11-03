@@ -12,6 +12,7 @@ ROOT = Path(__file__).resolve().parents[1]
 PACKAGE = Path(sys.argv[1]).resolve() if len(sys.argv) > 1 else ROOT / "build/xlab"
 RENAMES = json.loads((ROOT / "resources/object-renames.json").read_text())
 LEGACY = {old for old, new in RENAMES.items() if old != new}
+UPSTREAM_NAMES = {"vb.freezer~"}
 
 
 def run_pd(arguments):
@@ -28,7 +29,7 @@ def run_pd(arguments):
 
 native = []
 for cmake in [ROOT / "CMakeLists.txt", *ROOT.glob("src/**/CMakeLists.txt")]:
-    native.extend(re.findall(r"pd_add_external\(\s*(x\.[^\s)]+)", cmake.read_text()))
+    native.extend(re.findall(r"pd_add_external\(\s*((?:x\.|vb\.)[^\s)]+)", cmake.read_text()))
 
 # Loading by the public name exercises Pd's filename and setup-symbol lookup.
 run_pd([arg for name in native for arg in ("-lib", name)] + ["-send", "pd quit"])
@@ -41,7 +42,7 @@ for source in ROOT.glob("src/**/*"):
     registration = registration or re.search(r'#define OBJECT_NAME "([^"]+)"', text)
     if registration:
         name = registration[1]
-        assert name.startswith("x.") and source.stem == name, source
+        assert (name.startswith("x.") or name in UPSTREAM_NAMES) and source.stem == name, source
         setup = "setup_" + name.replace(".", "0x2e").replace("~", "_tilde")
         assert re.search(r"\bvoid " + setup + r"\(", text), source
         if source.suffix == ".cpp":
@@ -86,7 +87,11 @@ for source in [*ROOT.glob("src/**/*.pd_py"), *ROOT.glob("resources/**/*.pd_py")]
     assert (PACKAGE / source.name).read_bytes() == source.read_bytes(), source
     compile(text, str(source), "exec")
 
-for source in [*ROOT.glob("src/**/x.*-help.pd"), *ROOT.glob("resources/**/x.*-help.pd")]:
+for source in [
+    *ROOT.glob("src/**/x.*-help.pd"),
+    *ROOT.glob("resources/**/x.*-help.pd"),
+    *ROOT.glob("src/stolen/vb.*-help.pd"),
+]:
     # Packaging may rewrite references to third-party objects in help patches.
     assert (PACKAGE / source.name).is_file(), source
 

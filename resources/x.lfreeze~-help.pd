@@ -24,6 +24,10 @@
 #X obj 177 224 dac~;
 #X msg 103 181 frames 12;
 #X obj 81 268 x.lfreeze~ -f 4096 -w 150 -fr 12;
+#X text 517 268 freeze 1 captures and renders one audio loop. Playback then reads the cached samples.;
+#X text 517 290 Partial phases join across the loop boundary without an amplitude crossfade.;
+#X text 517 312 Spectral frames repeat inside a cache of at least 4 seconds to keep phase corrections small.;
+#X text 517 334 Analysis runs once on the scheduler. Desktop rendering runs in the background before playback starts.;
 #X connect 2 0 5 0;
 #X connect 2 0 7 0;
 #X connect 3 0 2 0;

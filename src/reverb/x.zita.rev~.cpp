@@ -1,11 +1,7 @@
-#include <algorithm>
-#include <cmath>
 #include <cstring>
-#include <vector>
-
-#include <m_pd.h>
 
 #include "reverb.h"
+#include <m_pd.h>
 
 #ifndef M_PI
 #define M_PI 3.14159265358979323846
