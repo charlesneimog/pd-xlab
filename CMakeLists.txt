@@ -171,9 +171,13 @@ pd_add_external(x.cputime "${CMAKE_CURRENT_SOURCE_DIR}/src/utilities/x.cputime.c
 # │                Reverb                │
 # ╰──────────────────────────────────────╯
 include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/CloudSeedCore.cmake")
-pd_add_external(x.cloudseed.rev~ "${CMAKE_CURRENT_SOURCE_DIR}/src/reverb/x.cloudseed.rev~.cpp"
-                TARGET x.cloudseed.rev_tilde LINK_LIBRARIES cloudseedcore)
-set_target_properties(x.cloudseed.rev_tilde PROPERTIES CXX_STANDARD 14 CXX_STANDARD_REQUIRED ON CXX_EXTENSIONS OFF)
+pd_add_external(x.cloudseed.rev~ "${CMAKE_CURRENT_SOURCE_DIR}/src/reverb/x.cloudseed.rev~.cpp" TARGET
+                x.cloudseed.rev_tilde LINK_LIBRARIES cloudseedcore)
+set_target_properties(
+    x.cloudseed.rev_tilde
+    PROPERTIES CXX_STANDARD 14
+               CXX_STANDARD_REQUIRED ON
+               CXX_EXTENSIONS OFF)
 pd_add_datafile(x.cloudseed.rev_tilde "${CLOUDSEED_LICENSE_FILE}")
 pd_add_datafile(x.cloudseed.rev_tilde "${CMAKE_CURRENT_SOURCE_DIR}/resources/x.cloudseed.rev~-help.pd")
 
@@ -195,13 +199,17 @@ target_include_directories(loris PRIVATE ${CMAKE_BINARY_DIR}/fftw-3.3.10/api)
 # freeze
 pd_add_external(x.lfreeze~ "${CMAKE_CURRENT_SOURCE_DIR}/src/fft/x.lfreeze~.cpp" LINK_LIBRARIES loris)
 # Loris exposes std::auto_ptr in its Analyzer header (removed in C++17).
-set_target_properties(x.lfreeze_tilde PROPERTIES CXX_STANDARD 14 CXX_STANDARD_REQUIRED ON CXX_EXTENSIONS OFF)
+set_target_properties(
+    x.lfreeze_tilde
+    PROPERTIES CXX_STANDARD 20
+               CXX_STANDARD_REQUIRED ON
+               CXX_EXTENSIONS OFF)
+
 if(NOT EMSCRIPTEN)
     find_package(Threads REQUIRED)
     target_link_libraries(x.lfreeze_tilde PRIVATE Threads::Threads)
 endif()
 pd_add_external(xlab "${CMAKE_CURRENT_SOURCE_DIR}/src/xlab.cpp")
-
 
 # include_directories(${CMAKE_BINARY_DIR}/)
 pd_add_external(x.click~ "${CMAKE_CURRENT_SOURCE_DIR}/src/utilities/x.click~.cpp")
@@ -306,8 +314,7 @@ file(GLOB LUA_OBJECTS CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/src/lua/*.p
      "${CMAKE_CURRENT_SOURCE_DIR}/src/granulador/*.pd_lua")
 pd_add_datafile(xlab "${LUA_OBJECTS}")
 file(GLOB_RECURSE XLAB_HELP_FILES CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/src/x.*-help.pd"
-     "${CMAKE_CURRENT_SOURCE_DIR}/src/stolen/*-help.pd"
-     "${CMAKE_CURRENT_SOURCE_DIR}/resources/x.*-help.pd")
+     "${CMAKE_CURRENT_SOURCE_DIR}/src/stolen/*-help.pd" "${CMAKE_CURRENT_SOURCE_DIR}/resources/x.*-help.pd")
 pd_add_datafile(xlab "${XLAB_HELP_FILES}")
 pd_add_datafile(xlab "${CMAKE_CURRENT_SOURCE_DIR}/src/sieves/sieve.lua")
 pd_add_datafile(xlab "${CMAKE_CURRENT_SOURCE_DIR}/src/microtonal/om_ji.lua")
@@ -338,7 +345,6 @@ add_custom_target(
 
 add_dependencies(
     edit_files # target
-
     # lua
     upic
     orchidea
