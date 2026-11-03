@@ -22,6 +22,10 @@
 
 static t_class *lfreeze_tilde_class;
 
+#ifndef M_PI
+#define M_PI 3.14159265358979323846
+#endif
+
 // ─────────────────────────────────────
 struct FreezeNode {
     double freq;
@@ -308,8 +312,8 @@ static double lfreeze_tilde_synthesize_sample(lfreeze_tilde *x, double twopi_ove
         double noise = double(x->randomState) * (2.0 / 4294967296.0) - 1.0;
         sample += node.amp.value * (cos(node.phase) + node.bw.value * noise * sin(node.phase));
         node.phase += node.freq.value * twopi_over_sr + node.phaseCorrection;
-        if (node.phase > 2.0 * std::numbers::pi) {
-            node.phase -= 2.0 * std::numbers::pi;
+        if (node.phase > 2.0 * M_PI) {
+            node.phase -= 2.0 * M_PI;
         }
 
         node.freq.advance();
@@ -367,7 +371,7 @@ static bool lfreeze_tilde_render_loop(lfreeze_tilde *x, double sr,
         x->randomState = 1;
     lfreeze_tilde_prepare_transition(x);
     x->loopBuffer.resize(size);
-    const double twopi_over_sr = (2.0 * std::numbers::pi) / sr;
+    const double twopi_over_sr = (2.0 * M_PI) / sr;
     for (size_t i = 0; i < size; ++i) {
         if ((i & 255) == 0 && cancelled && cancelled->load(std::memory_order_relaxed))
             return false;

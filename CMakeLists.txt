@@ -201,10 +201,9 @@ pd_add_external(x.lfreeze~ "${CMAKE_CURRENT_SOURCE_DIR}/src/fft/x.lfreeze~.cpp" 
 # Loris exposes std::auto_ptr in its Analyzer header (removed in C++17).
 set_target_properties(
     x.lfreeze_tilde
-    PROPERTIES CXX_STANDARD 20
+    PROPERTIES CXX_STANDARD 14
                CXX_STANDARD_REQUIRED ON
                CXX_EXTENSIONS OFF)
-
 if(NOT EMSCRIPTEN)
     find_package(Threads REQUIRED)
     target_link_libraries(x.lfreeze_tilde PRIVATE Threads::Threads)
