@@ -3,17 +3,12 @@ name: Build and publish Pure Data package
 on:
     push:
         branches: [main]
+        tags: ["v*"]
     workflow_dispatch:
-        inputs:
-            publish_release:
-                description: Upload to Deken and create a draft GitHub Release using LIBVERSION
-                required: false
-                type: boolean
-                default: false
 env:
     LIBNAME: xlab
-    LIBVERSION: 0.1.0
-    PYVERSION: "3.13"
+    LIBVERSION: ${{ github.ref_name }}
+    PYVERSION: "3.14"
 permissions:
     contents: write
 jobs:
@@ -148,7 +143,7 @@ jobs:
                   path: ${{ github.workspace }}/${{ env.LIBNAME }}
                   if-no-files-found: error
     publish-release:
-        if: ${{ inputs.publish_release }}
+        if: ${{ github.ref_type == 'tag' }}
         needs: [macos, linux-build, windows-build]
         runs-on: ubuntu-latest
         steps:
@@ -190,7 +185,7 @@ jobs:
                     --workdir /deken \
                     -e DEKEN_USERNAME -e DEKEN_PASSWORD \
                     registry.git.iem.at/pd/deken \
-                    deken upload -v "${LIBVERSION}" "${deken_packages[@]}"
+                    deken upload --no-source-error -v "${LIBVERSION}" "${deken_packages[@]}"
             - name: Create all-platforms archive
               run: |
                   cd release/pd
@@ -198,13 +193,13 @@ jobs:
             - name: Create / Update GitHub Release
               uses: softprops/action-gh-release@v2
               with:
-                  tag_name: v${{ env.LIBVERSION }}
-                  name: ${{ env.LIBNAME }} v${{ env.LIBVERSION }}
+                  tag_name: ${{ env.LIBVERSION }}
+                  name: ${{ env.LIBNAME }} ${{ env.LIBVERSION }}
                   target_commitish: ${{ github.sha }}
                   generate_release_notes: true
                   fail_on_unmatched_files: true
                   files: |
                       ${{ env.LIBNAME }}-${{ env.LIBVERSION }}-all-platforms.zip
                       *.dek
-                  draft: true
+                  draft: false
                   prerelease: false
