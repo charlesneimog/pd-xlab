@@ -94,5 +94,5 @@ extern "C" void xlab_setup() {
     t_canvas *canvas = canvas_getcurrent();
     xlab_load_dependency(canvas, "lua");
     xlab_load_dependency(canvas, "py4pd");
-    post("[pd-xlab] version %d.%d.%d built on %s %s", 0, 1, 2, __DATE__, __TIME__);
+    post("[pd-xlab] version %d.%d.%d built on %s %s", 0, 1, 3, __DATE__, __TIME__);
 }
