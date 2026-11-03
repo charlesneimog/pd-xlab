@@ -14,6 +14,9 @@
 #include <thread>
 #include <vector>
 
+#define _USE_MATH_DEFINES
+#include <cmath>
+
 static t_class *vb_freezer_class;
 static constexpr size_t vb_freezer_max_size = vb_freezer::kMaximumSize;
 
