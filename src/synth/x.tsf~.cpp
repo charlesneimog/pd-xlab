@@ -45,6 +45,12 @@ struct t_tsf_tilde {
     float global_volume;
 
     t_symbol *filename;
+
+    struct {
+        float pitch;
+        int key;
+        bool active;
+    } notes[16];
 };
 
 // ─────────────────────────────────────
@@ -163,46 +169,90 @@ static void tsf_tilde_open(t_tsf_tilde *x, t_symbol *s) {
 }
 
 // ─────────────────────────────────────
+
 static void tsf_tilde_list(t_tsf_tilde *x, t_symbol *, int argc, t_atom *argv) {
     if (!tsf_tilde_has_soundfont(x))
         return;
 
-    if (argc < 2) {
+    if (argc < 2 || argv[0].a_type != A_FLOAT || argv[1].a_type != A_FLOAT) {
         pd_error(x, "[x.tsf~] expected: pitch velocity [channel]");
-
         return;
     }
 
-    if (argv[0].a_type != A_FLOAT || argv[1].a_type != A_FLOAT) {
-        pd_error(x, "[x.tsf~] pitch and velocity must be numbers");
+    float pitch = static_cast<float>(atom_getfloat(argv));
+    float velocity_f = static_cast<float>(atom_getfloat(argv + 1));
 
+    if (!std::isfinite(pitch) || !std::isfinite(velocity_f)) {
+        pd_error(x, "[x.tsf~] invalid pitch or velocity");
         return;
     }
 
-    int pitch = static_cast<int>(atom_getfloat(argv));
+    pitch = std::clamp(pitch, 0.0f, 127.0f);
 
-    int velocity = static_cast<int>(atom_getfloat(argv + 1));
+    int key = static_cast<int>(std::floor(pitch));
+    float tuning = pitch - static_cast<float>(key);
+    int velocity = std::clamp(static_cast<int>(velocity_f), 0, 127);
 
-    pitch = std::clamp(pitch, 0, 127);
-    velocity = std::clamp(velocity, 0, 127);
-
-    int channel = tsf_tilde_atom_channel(argc, argv, 2, x->channel);
+    // An optional third argument explicitly selects a channel.
+    bool explicit_channel = argc >= 3 && argv[2].a_type == A_FLOAT;
+    int requested_channel = explicit_channel ? tsf_tilde_pd_channel(atom_getfloat(argv + 2)) : -1;
 
     std::lock_guard<std::mutex> lock(*x->mutex);
 
     if (velocity == 0) {
+        // Find the most recently allocated matching note.
+        for (int ch = 15; ch >= 0; --ch) {
+            if (!x->notes[ch].active)
+                continue;
 
-        tsf_channel_note_off(x->soundfont, channel, pitch);
+            if (explicit_channel && ch != requested_channel)
+                continue;
 
+            if (std::fabs(x->notes[ch].pitch - pitch) > 0.0001f)
+                continue;
+
+            tsf_channel_note_off(x->soundfont, ch, x->notes[ch].key);
+            x->notes[ch].active = false;
+            return;
+        }
+
+        return;
+    }
+
+    // Allocate a channel.
+    int channel = -1;
+
+    if (explicit_channel) {
+        if (!x->notes[requested_channel].active)
+            channel = requested_channel;
     } else {
-
-        float vel = static_cast<float>(velocity) / 127.0f;
-
-        if (!tsf_channel_note_on(x->soundfont, channel, pitch, vel)) {
-
-            pd_error(x, "[x.tsf~] could not allocate voice");
+        for (int ch = 0; ch < 16; ++ch) {
+            if (!x->notes[ch].active) {
+                channel = ch;
+                break;
+            }
         }
     }
+
+    if (channel < 0) {
+        pd_error(x, "[x.tsf~] no free MIDI channels");
+        return;
+    }
+
+    float vel = static_cast<float>(velocity) / 127.0f;
+
+    // Each channel has its own tuning.
+    tsf_channel_set_tuning(x->soundfont, channel, tuning);
+
+    if (!tsf_channel_note_on(x->soundfont, channel, key, vel)) {
+        pd_error(x, "[x.tsf~] could not allocate voice");
+        return;
+    }
+
+    // Remember which channel belongs to this note.
+    x->notes[channel].pitch = pitch;
+    x->notes[channel].key = key;
+    x->notes[channel].active = true;
 }
 
 // ─────────────────────────────────────
@@ -211,19 +261,13 @@ static void tsf_tilde_note(t_tsf_tilde *x, t_symbol *s, int argc, t_atom *argv) 
 }
 
 // ─────────────────────────────────────────────────────────────
-// off <pitch>
-// ─────────────────────────────────────────────────────────────
+static void tsf_tilde_off(t_tsf_tilde *x, t_floatarg pitch) {
+    t_atom argv[2];
 
-// ─────────────────────────────────────
-static void tsf_tilde_off(t_tsf_tilde *x, t_floatarg f) {
-    if (!tsf_tilde_has_soundfont(x))
-        return;
+    SETFLOAT(&argv[0], pitch);
+    SETFLOAT(&argv[1], 0);
 
-    int pitch = std::clamp(static_cast<int>(f), 0, 127);
-
-    std::lock_guard<std::mutex> lock(*x->mutex);
-
-    tsf_channel_note_off(x->soundfont, x->channel, pitch);
+    tsf_tilde_list(x, &s_list, 2, argv);
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -733,39 +777,55 @@ static void *tsf_tilde_new(t_symbol *s) {
     }
     x->outlet = outlet_new(&x->x_obj, &s_signal);
 
-    if (s && s != &s_) {
-        char dir[MAXPDSTRING];
-        char *name = nullptr;
-        int fd = canvas_open(x->canvas, s->s_name, "", dir, &name, MAXPDSTRING, 1);
-        if (fd < 0) {
-            pd_error(x, "[x.tsf~] could not find SoundFont: %s", s->s_name);
-            return x;
+    int default_sf = 0;
+    if (!s || s == &s_ || !s->s_name[0]) {
+        s = gensym("xlab/piano.sf2");
+        default_sf = 1;
+        logpost(x, PD_NORMAL, "[x.tsf~] Using YDP Grand Piano SoundFont (FreePats)");
+    }
+
+    char dir[MAXPDSTRING];
+    char *name = nullptr;
+    int fd = canvas_open(x->canvas, s->s_name, "", dir, &name, MAXPDSTRING, 1);
+    if (fd < 0) {
+        pd_error(x, "[x.tsf~] could not find SoundFont: %s", s->s_name);
+        return x;
+    }
+
+    sys_close(fd);
+    char path[MAXPDSTRING];
+    std::snprintf(path, sizeof(path), "%s/%s", dir, name);
+    x->soundfont = tsf_load_filename(path);
+
+    if (!x->soundfont) {
+        pd_error(x, "[x.tsf~] could not load SoundFont: %s", path);
+        return x;
+    }
+
+    x->filename = s;
+    tsf_set_output(x->soundfont, TSF_MONO, x->sample_rate, 0.0f);
+    tsf_set_volume(x->soundfont, x->global_volume);
+
+    if (!tsf_set_max_voices(x->soundfont, x->max_voices)) {
+        pd_error(x, "[x.tsf~] could not allocate %d voices", x->max_voices);
+    }
+
+    for (int channel = 0; channel < 16; ++channel) {
+        if (!tsf_channel_set_bank_preset(x->soundfont, channel, 0, 0)) {
+            pd_error(x, "[x.tsf~] Acoustic Grand Piano not found");
         }
 
-        sys_close(fd);
-        char path[MAXPDSTRING];
-        std::snprintf(path, sizeof(path), "%s/%s", dir, name);
-        x->soundfont = tsf_load_filename(path);
-
-        if (!x->soundfont) {
-            pd_error(x, "[x.tsf~] could not load SoundFont: %s", path);
-            return x;
-        }
-
-        x->filename = s;
-        tsf_set_output(x->soundfont, TSF_MONO, x->sample_rate, 0.0f);
-        tsf_set_volume(x->soundfont, x->global_volume);
-
-        if (!tsf_set_max_voices(x->soundfont, x->max_voices)) {
-            pd_error(x, "[x.tsf~] could not allocate %d voices", x->max_voices);
-        }
-
-        for (int channel = 0; channel < 16; ++channel) {
+        if (default_sf) {
+            tsf_channel_set_bank_preset(x->soundfont, channel, 0, 0);
+        } else {
             tsf_channel_set_presetindex(x->soundfont, channel, 0);
         }
+    }
 
-        post("[x.tsf~] loaded: %s", path);
-        post("[x.tsf~] presets: %d", tsf_get_presetcount(x->soundfont));
+    for (int ch = 0; ch < 16; ++ch) {
+        x->notes[ch].pitch = 0.0f;
+        x->notes[ch].key = 0;
+        x->notes[ch].active = false;
     }
 
     return x;

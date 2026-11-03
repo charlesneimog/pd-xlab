@@ -30,6 +30,8 @@ endif()
 include(${PDCMAKE_FILE})
 include_directories("${PD_SOURCES_PATH}")
 
+pd_add_external(xlab "${CMAKE_CURRENT_SOURCE_DIR}/src/xlab.cpp")
+
 # ╭──────────────────────────────────────╮
 # │                 CPM                  │
 # ╰──────────────────────────────────────╯
@@ -80,6 +82,36 @@ get_property(
 set_target_properties(fftw3 PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 set_target_properties(fftw3 PROPERTIES POSITION_INDEPENDENT_CODE ON)
 include_directories("${CMAKE_BINARY_DIR}/fftw-3.3.10/api/")
+
+# ╭──────────────────────────────────────╮
+# │                Files                 │
+# ╰──────────────────────────────────────╯
+set(SF_URL "https://freepats.zenvoid.org/Piano/YDP-GrandPiano/YDP-GrandPiano-SF2-20160804.tar.bz2")
+set(SF_ARCHIVE "${CMAKE_BINARY_DIR}/YDP-GrandPiano.tar.bz2")
+set(SF_DIR "${CMAKE_BINARY_DIR}/soundfonts")
+set(SF_EXTRACT_DIR "${CMAKE_BINARY_DIR}/soundfont-extract")
+
+if(NOT EXISTS "${SF_ARCHIVE}")
+    file(
+        DOWNLOAD "${SF_URL}" "${SF_ARCHIVE}"
+        STATUS SF_STATUS
+        TLS_VERIFY ON)
+    list(GET SF_STATUS 0 SF_CODE)
+    if(NOT SF_CODE EQUAL 0)
+        message(FATAL_ERROR "Failed to download SoundFont: ${SF_STATUS}")
+    endif()
+endif()
+
+file(MAKE_DIRECTORY "${SF_EXTRACT_DIR}" "${SF_DIR}")
+file(ARCHIVE_EXTRACT INPUT "${SF_ARCHIVE}" DESTINATION "${SF_EXTRACT_DIR}")
+file(GLOB_RECURSE SF_FILES "${SF_EXTRACT_DIR}/*.sf2")
+if(NOT SF_FILES)
+    message(FATAL_ERROR "No SF2 file found in archive")
+endif()
+
+list(GET SF_FILES 0 SF_FILE)
+file(COPY_FILE "${SF_FILE}" "${SF_DIR}/piano.sf2")
+pd_add_datafile(xlab "${SF_DIR}/piano.sf2")
 
 # ╭──────────────────────────────────────╮
 # │               Objects                │
@@ -208,7 +240,6 @@ if(NOT EMSCRIPTEN)
     find_package(Threads REQUIRED)
     target_link_libraries(x.lfreeze_tilde PRIVATE Threads::Threads)
 endif()
-pd_add_external(xlab "${CMAKE_CURRENT_SOURCE_DIR}/src/xlab.cpp")
 
 # include_directories(${CMAKE_BINARY_DIR}/)
 pd_add_external(x.click~ "${CMAKE_CURRENT_SOURCE_DIR}/src/utilities/x.click~.cpp")
@@ -284,7 +315,7 @@ else()
     # Temporary package fallbacks until these sources are moved into pd-xlab.
     cpmaddpackage("gh:charlesneimog/pd-orchidea#main")
     cpmaddpackage("gh:charlesneimog/pd-upic#main")
-    cpmaddpackage("gh:EL-LOCUS-SOLUS/pd-bhack#main")
+    cpmaddpackage("gh:EL-LOCUS-SOLUS/pd-bhack#right")
 
     # Packages intentionally kept outside pd-xlab.
     if(NOT EMSCRIPTEN)
