@@ -124,7 +124,6 @@ pd_add_external(x.conv~ "${CMAKE_CURRENT_SOURCE_DIR}/src/fft/x.conv~.cpp" LINK_L
 
 # array
 pd_add_external(x.array.rotate "${CMAKE_CURRENT_SOURCE_DIR}/src/arrays/x.array.rotate.cpp")
-pd_add_external(x.array.invert "${CMAKE_CURRENT_SOURCE_DIR}/src/arrays/x.array.invert.cpp")
 pd_add_external(x.array.sum "${CMAKE_CURRENT_SOURCE_DIR}/src/arrays/x.array.sum.cpp")
 
 # manipulations
@@ -242,6 +241,7 @@ if(NOT EMSCRIPTEN)
 endif()
 
 # include_directories(${CMAKE_BINARY_DIR}/)
+pd_add_external(x.grainer~ "${CMAKE_CURRENT_SOURCE_DIR}/src/granulador/x.grainer~.c")
 pd_add_external(x.click~ "${CMAKE_CURRENT_SOURCE_DIR}/src/utilities/x.click~.cpp")
 pd_add_external(x.curve~ "${CMAKE_CURRENT_SOURCE_DIR}/src/utilities/x.curve~.cpp")
 pd_add_external(x.denoise~ "${CMAKE_CURRENT_SOURCE_DIR}/src/utilities/x.denoise~.cpp")
@@ -282,6 +282,7 @@ if(NOT TARGET x.onsetsds_tilde)
     pd_add_external(x.onsetsds~
                     "${CMAKE_CURRENT_SOURCE_DIR}/src/mir/onsetsds.c;${CMAKE_CURRENT_SOURCE_DIR}/src/mir/x.onsetsds~.c")
 endif()
+pd_add_external(x.yin~ "${CMAKE_CURRENT_SOURCE_DIR}/src/mir/x.yin~.c")
 
 # ╭──────────────────────────────────────╮
 # │             DDDD Package             │
@@ -330,6 +331,11 @@ else()
             DOWNLOAD_ONLY
             YES)
 
+        # loris
+        pd_add_external(x.loris.anal "${CMAKE_CURRENT_SOURCE_DIR}/src/loris/x.loris.anal.cpp" LINK_LIBRARIES loris)
+        target_link_libraries(x.loris.anal PRIVATE lua)
+        pd_add_external(x.loris.dilate "${CMAKE_CURRENT_SOURCE_DIR}/src/loris/x.loris.dilate.cpp" LINK_LIBRARIES loris)
+        pd_add_external(x.loris.morph "${CMAKE_CURRENT_SOURCE_DIR}/src/loris/x.loris.morph.cpp" LINK_LIBRARIES loris)
     endif()
 endif()
 
