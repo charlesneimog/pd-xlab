@@ -3,7 +3,7 @@
 #include <string>
 #include <vector>
 
-static t_class *neimog_arrayrotate;
+static t_class *t_arrayrotate;
 
 // ─────────────────────────────────────
 class arrayrotate {
@@ -24,7 +24,7 @@ static void arrayrotate_rotate(arrayrotate *x, t_symbol *s, int argc, t_atom *ar
 
     for (int i = 0; i < argc; i++) {
         if (argv[i].a_type != A_FLOAT) {
-            pd_error(x, "All arguments must be floats");
+            pd_error(x, "[x.array.rotate] all arguments must be floats");
             return;
         }
     }
@@ -35,10 +35,10 @@ static void arrayrotate_rotate(arrayrotate *x, t_symbol *s, int argc, t_atom *ar
 
     t_symbol *pd_symbol = gensym(x->arrayname.c_str());
     if (!(array = (t_garray *)pd_findbyclass(pd_symbol, garray_class))) {
-        pd_error(x, "[Python] Array %s not found.", x->arrayname.c_str());
+        pd_error(x, "[x.array.rotate] Array %s not found.", x->arrayname.c_str());
         return;
     } else if (!garray_getfloatwords(array, &vecsize, &vec)) {
-        pd_error(x, "[Python] Bad template for tabwrite '%s'.", x->arrayname.c_str());
+        pd_error(x, "[x.array.rotate] Bad template for tabwrite '%s'.", x->arrayname.c_str());
         return;
     }
 
@@ -67,16 +67,17 @@ static void arrayrotate_rotate(arrayrotate *x, t_symbol *s, int argc, t_atom *ar
 
 // ─────────────────────────────────────
 static void *arrayrotate_new(t_symbol *s) {
-    arrayrotate *x = (arrayrotate *)pd_new(neimog_arrayrotate);
+    arrayrotate *x = (arrayrotate *)pd_new(t_arrayrotate);
     x->arrayname = s->s_name;
     return (x);
 }
 
 // ─────────────────────────────────────
 extern "C" void setup_x0x2earray0x2erotate(void) {
-    neimog_arrayrotate = class_new(gensym("x.array.rotate"), (t_newmethod)arrayrotate_new, 0,
-                                   sizeof(arrayrotate), 0, A_SYMBOL, 0);
+    t_arrayrotate = class_new(gensym("x.array.rotate"), (t_newmethod)arrayrotate_new, 0,
+                              sizeof(arrayrotate), 0, A_SYMBOL, 0);
 
-    class_addlist(neimog_arrayrotate, (t_method)arrayrotate_rotate);
-    class_addmethod(neimog_arrayrotate, (t_method)arrayrotate_redraw, gensym("redraw"), A_FLOAT, 0);
+    class_addlist(t_arrayrotate, (t_method)arrayrotate_rotate);
+    class_addmethod(t_arrayrotate, (t_method)arrayrotate_redraw, gensym("redraw"), A_FLOAT, 0);
+    class_sethelpsymbol(t_arrayrotate, gensym("x.array"));
 }

@@ -3,7 +3,7 @@
 
 #define NEIMOG_MAXARRAYSIZE 10000000
 
-static t_class *neimog_arrayappend;
+static t_class *t_arrayappend;
 
 // ─────────────────────────────────────
 class arrayappend {
@@ -61,13 +61,12 @@ static void arrayappend_float(arrayappend *x, t_float f) {
         x->arraysize = garray_npoints(array);
     }
 
-    // vec[x->index].w_float = f;
     x->index++;
 }
 
 // ─────────────────────────────────────
 static void *arrayappend_new(t_symbol *s) {
-    arrayappend *x = (arrayappend *)pd_new(neimog_arrayappend);
+    arrayappend *x = (arrayappend *)pd_new(t_arrayappend);
     t_garray *array;
     x->arrayname = s->s_name;
     x->index = 0;
@@ -85,7 +84,8 @@ static void *arrayappend_new(t_symbol *s) {
 
 // ─────────────────────────────────────
 extern "C" void setup_x0x2earray0x2eappend(void) {
-    neimog_arrayappend = class_new(gensym("x.array.append"), (t_newmethod)arrayappend_new, 0,
-                                   sizeof(arrayappend), 0, A_SYMBOL, 0);
-    class_addfloat(neimog_arrayappend, (t_method)arrayappend_float);
+    t_arrayappend = class_new(gensym("x.array.append"), (t_newmethod)arrayappend_new, 0,
+                              sizeof(arrayappend), 0, A_SYMBOL, 0);
+    class_addfloat(t_arrayappend, (t_method)arrayappend_float);
+    class_sethelpsymbol(t_arrayappend, gensym("x.array"));
 }
