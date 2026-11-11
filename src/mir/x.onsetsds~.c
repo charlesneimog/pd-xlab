@@ -6,7 +6,7 @@
 static t_class *onsetsds_tilde_class;
 
 // ─────────────────────────────────────
-typedef struct _onsetsds_tilde {
+typedef struct _yin_tilde {
     t_object x_obj;
     t_sample x_sample;
     t_clock *clock;
@@ -39,8 +39,8 @@ static void onsetsds_tilde_restart(t_onsetsds_tilde *x) {
         freebytes(x->ods_data, x->ods_data_size);
     x->ods_data_size = onsetsds_memneeded(x->onset_type, x->fftsize, x->medspan);
     x->ods_data = (float *)getbytes(x->ods_data_size);
-    onsetsds_init(x->ODS, x->ods_data, ODS_FFT_FFTW3_R2C, x->onset_type, x->fftsize,
-                  x->medspan, sys_getsr());
+    onsetsds_init(x->ODS, x->ods_data, ODS_FFT_FFTW3_R2C, x->onset_type, x->fftsize, x->medspan,
+                  sys_getsr());
 }
 
 // ─────────────────────────────────────
@@ -273,8 +273,7 @@ static void *onsetsds_tilde_new(t_symbol *s, int argc, t_atom *argv) {
 
     x->x_fft_in = (t_sample *)getbytes(x->fftsize * sizeof(t_sample));
     x->x_fft_imag = (t_sample *)getbytes(x->fftsize * sizeof(t_sample));
-    x->x_fft_data =
-        (t_sample *)getbytes((size_t)(2 * (x->fftsize / 2 + 1)) * sizeof(t_sample));
+    x->x_fft_data = (t_sample *)getbytes((size_t)(2 * (x->fftsize / 2 + 1)) * sizeof(t_sample));
     memset(x->x_fft_in, 0, x->fftsize * sizeof(t_sample));
     memset(x->x_fft_imag, 0, x->fftsize * sizeof(t_sample));
 

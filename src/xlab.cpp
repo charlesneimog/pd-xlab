@@ -86,13 +86,15 @@ extern "C" void xlab_setup() {
 
     const char *external_dir = class_gethelpdir(xlab_class);
     if (!external_dir || !external_dir[0]) {
-        pd_error(nullptr, "[xlab] could not determine its installation directory");
+        logpost(nullptr, 2, "[xlab] could not determine its installation directory");
         return;
     }
 
     xlab_lib_path = external_dir;
     t_canvas *canvas = canvas_getcurrent();
+
     xlab_load_dependency(canvas, "lua");
     xlab_load_dependency(canvas, "py4pd");
+
     post("[pd-xlab] version %d.%d.%d built on %s %s", 0, 1, 3, __DATE__, __TIME__);
 }

@@ -6,11 +6,11 @@
 #include <cstring>
 #include <vector>
 
-namespace {
-
 constexpr int DEFAULT_SIZE = 1024;
 constexpr int MAX_SIZE = 16 * 1024 * 1024;
 constexpr double PI = 3.14159265358979323846264338327950288;
+
+static t_class *xcurve_class;
 
 enum class WindowType {
     Hann,
@@ -29,6 +29,7 @@ enum class WindowType {
     Dpss
 };
 
+// ─────────────────────────────────────
 typedef struct _xcurve {
     t_object object;
     t_sample *buffer;
@@ -39,8 +40,7 @@ typedef struct _xcurve {
     double parameter;
 } t_xcurve;
 
-static t_class *xcurve_class;
-
+// ─────────────────────────────────────
 static double default_parameter(WindowType type) {
     switch (type) {
     case WindowType::Kaiser:
@@ -58,6 +58,7 @@ static double default_parameter(WindowType type) {
     }
 }
 
+// ─────────────────────────────────────
 static bool parse_window(t_symbol *name, WindowType &type) {
     const char *s = name->s_name;
     if (!std::strcmp(s, "hann") || !std::strcmp(s, "hanning"))
@@ -97,6 +98,7 @@ static bool parse_window(t_symbol *name, WindowType &type) {
     return true;
 }
 
+// ─────────────────────────────────────
 static double bessel_i0(double x) {
     double sum = 1.0;
     double term = 1.0;
@@ -110,10 +112,10 @@ static double bessel_i0(double x) {
     return sum;
 }
 
-static bool is_power_of_two(size_t n) {
-    return n && !(n & (n - 1));
-}
+// ─────────────────────────────────────
+static bool is_power_of_two(size_t n) { return n && !(n & (n - 1)); }
 
+// ─────────────────────────────────────
 static void radix2_fft(std::vector<std::complex<double>> &values, bool inverse) {
     const size_t n = values.size();
     for (size_t i = 1, j = 0; i < n; ++i) {
@@ -147,6 +149,7 @@ static void radix2_fft(std::vector<std::complex<double>> &values, bool inverse) 
     }
 }
 
+// ─────────────────────────────────────
 // Forward DFT using Bluestein's algorithm for non-power-of-two window sizes.
 static void forward_dft(std::vector<std::complex<double>> &values) {
     const size_t n = values.size();
@@ -164,8 +167,8 @@ static void forward_dft(std::vector<std::complex<double>> &values) {
     std::vector<std::complex<double>> a(fft_size);
     std::vector<std::complex<double>> b(fft_size);
     for (size_t i = 0; i < n; ++i) {
-        const double angle = PI * static_cast<double>(i) * static_cast<double>(i) /
-                             static_cast<double>(n);
+        const double angle =
+            PI * static_cast<double>(i) * static_cast<double>(i) / static_cast<double>(n);
         const std::complex<double> negative_chirp(std::cos(angle), -std::sin(angle));
         const std::complex<double> positive_chirp(std::cos(angle), std::sin(angle));
         a[i] = values[i] * negative_chirp;
@@ -181,12 +184,13 @@ static void forward_dft(std::vector<std::complex<double>> &values) {
     radix2_fft(a, true);
 
     for (size_t i = 0; i < n; ++i) {
-        const double angle = PI * static_cast<double>(i) * static_cast<double>(i) /
-                             static_cast<double>(n);
+        const double angle =
+            PI * static_cast<double>(i) * static_cast<double>(i) / static_cast<double>(n);
         values[i] = a[i] * std::complex<double>(std::cos(angle), -std::sin(angle));
     }
 }
 
+// ─────────────────────────────────────
 static void fill_dolph_chebyshev(t_sample *buffer, int size, double attenuation) {
     if (size == 1) {
         buffer[0] = 1.0f;
@@ -235,6 +239,7 @@ static void fill_dolph_chebyshev(t_sample *buffer, int size, double attenuation)
     }
 }
 
+// ─────────────────────────────────────
 static void fill_dpss(t_sample *buffer, int size, double time_bandwidth) {
     if (size == 1) {
         buffer[0] = 1.0f;
@@ -255,8 +260,8 @@ static void fill_dpss(t_sample *buffer, int size, double time_bandwidth) {
     for (int i = 0; i < size - 1; ++i)
         off_diagonal[i] = (i + 1.0) * (size - i - 1.0) * 0.5;
     for (int i = 0; i < size; ++i) {
-        const double radius = (i ? off_diagonal[i - 1] : 0.0) +
-                              (i + 1 < size ? off_diagonal[i] : 0.0);
+        const double radius =
+            (i ? off_diagonal[i - 1] : 0.0) + (i + 1 < size ? off_diagonal[i] : 0.0);
         lower_bound = std::min(lower_bound, diagonal[i] - radius);
     }
 
@@ -291,6 +296,7 @@ static void fill_dpss(t_sample *buffer, int size, double time_bandwidth) {
         buffer[i] = static_cast<t_sample>(vector[i]);
 }
 
+// ─────────────────────────────────────
 static void normalize_window(t_sample *buffer, int size) {
     double peak = 0.0;
     for (int i = 0; i < size; ++i)
@@ -305,6 +311,7 @@ static void normalize_window(t_sample *buffer, int size) {
     }
 }
 
+// ─────────────────────────────────────
 static void fill_window(t_xcurve *x) {
     const int size = x->size;
     if (size == 1) {
@@ -393,6 +400,7 @@ static void fill_window(t_xcurve *x) {
     x->position = size;
 }
 
+// ─────────────────────────────────────
 static bool resize_buffer(t_xcurve *x, int size) {
     if (size < 1 || size > MAX_SIZE) {
         pd_error(x, "[x.curve~] size must be between 1 and %d samples", MAX_SIZE);
@@ -413,8 +421,8 @@ static bool resize_buffer(t_xcurve *x, int size) {
     return true;
 }
 
-static bool configure(t_xcurve *x, t_symbol *name, int size, bool has_parameter,
-                      double parameter) {
+// ─────────────────────────────────────
+static bool configure(t_xcurve *x, t_symbol *name, int size, bool has_parameter, double parameter) {
     WindowType type;
     if (!parse_window(name, type)) {
         pd_error(x, "[x.curve~] unknown curve '%s'", name->s_name);
@@ -430,10 +438,10 @@ static bool configure(t_xcurve *x, t_symbol *name, int size, bool has_parameter,
     return true;
 }
 
-static void xcurve_bang(t_xcurve *x) {
-    x->position = 0;
-}
+// ─────────────────────────────────────
+static void xcurve_bang(t_xcurve *x) { x->position = 0; }
 
+// ─────────────────────────────────────
 static void xcurve_anything(t_xcurve *x, t_symbol *selector, int argc, t_atom *argv) {
     int size = x->size;
     bool has_parameter = false;
@@ -458,10 +466,12 @@ static void xcurve_anything(t_xcurve *x, t_symbol *selector, int argc, t_atom *a
         has_parameter = true;
         parameter = atom_getfloat(argv + 1);
     }
-    if (configure(x, selector, size, has_parameter, parameter))
+    if (configure(x, selector, size, has_parameter, parameter)) {
         xcurve_bang(x);
+    }
 }
 
+// ─────────────────────────────────────
 static void xcurve_set(t_xcurve *x, t_symbol *, int argc, t_atom *argv) {
     if (argc < 1 || argv[0].a_type != A_SYMBOL) {
         pd_error(x, "[x.curve~] usage: set <curve> [size] [parameter]");
@@ -470,6 +480,7 @@ static void xcurve_set(t_xcurve *x, t_symbol *, int argc, t_atom *argv) {
     xcurve_anything(x, atom_getsymbol(argv), argc - 1, argv + 1);
 }
 
+// ─────────────────────────────────────
 static void xcurve_size(t_xcurve *x, t_floatarg requested) {
     const int size = static_cast<int>(requested);
     if (resize_buffer(x, size)) {
@@ -478,12 +489,14 @@ static void xcurve_size(t_xcurve *x, t_floatarg requested) {
     }
 }
 
+// ─────────────────────────────────────
 static void xcurve_parameter(t_xcurve *x, t_floatarg parameter) {
     x->parameter = parameter;
     fill_window(x);
     xcurve_bang(x);
 }
 
+// ─────────────────────────────────────
 static t_int *xcurve_perform(t_int *w) {
     t_xcurve *x = reinterpret_cast<t_xcurve *>(w[1]);
     t_sample *output = reinterpret_cast<t_sample *>(w[2]);
@@ -500,10 +513,12 @@ static t_int *xcurve_perform(t_int *w) {
     return w + 4;
 }
 
+// ─────────────────────────────────────
 static void xcurve_dsp(t_xcurve *x, t_signal **signals) {
     dsp_add(xcurve_perform, 3, x, signals[0]->s_vec, signals[0]->s_n);
 }
 
+// ─────────────────────────────────────
 static void *xcurve_new(t_symbol *, int argc, t_atom *argv) {
     t_xcurve *x = reinterpret_cast<t_xcurve *>(pd_new(xcurve_class));
     x->buffer = nullptr;
@@ -536,20 +551,19 @@ static void *xcurve_new(t_symbol *, int argc, t_atom *argv) {
     return x;
 }
 
+// ─────────────────────────────────────
 static void xcurve_free(t_xcurve *x) {
     if (x->buffer)
         freebytes(x->buffer, x->size * sizeof(t_sample));
 }
 
-} // namespace
-
+// ─────────────────────────────────────
 extern "C" void setup_x0x2ecurve_tilde(void) {
     xcurve_class = class_new(gensym("x.curve~"), reinterpret_cast<t_newmethod>(xcurve_new),
                              reinterpret_cast<t_method>(xcurve_free), sizeof(t_xcurve),
                              CLASS_DEFAULT, A_GIMME, 0);
     class_addbang(xcurve_class, xcurve_bang);
-    class_addmethod(xcurve_class, reinterpret_cast<t_method>(xcurve_dsp), gensym("dsp"), A_CANT,
-                    0);
+    class_addmethod(xcurve_class, reinterpret_cast<t_method>(xcurve_dsp), gensym("dsp"), A_CANT, 0);
     class_addmethod(xcurve_class, reinterpret_cast<t_method>(xcurve_set), gensym("set"), A_GIMME,
                     0);
     class_addmethod(xcurve_class, reinterpret_cast<t_method>(xcurve_size), gensym("size"), A_FLOAT,
