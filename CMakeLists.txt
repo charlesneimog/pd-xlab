@@ -290,7 +290,7 @@ pd_add_external(x.yin~ "${CMAKE_CURRENT_SOURCE_DIR}/src/mir/x.yin~.c")
 include(FetchContent)
 FetchContent_Declare(
     dddd
-    GIT_REPOSITORY https://github.com/EL-LOCUS-SOLUS/pd-dddd
+    GIT_REPOSITORY https://github.com/charlesneimog/pd-dddd
     GIT_TAG main)
 FetchContent_MakeAvailable(dddd)
 FetchContent_GetProperties(dddd)
