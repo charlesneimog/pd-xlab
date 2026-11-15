@@ -65,15 +65,17 @@ set(DISABLE_FORTRAN
     CACHE BOOL "" FORCE)
 
 set(FFTW3_FILE ${CMAKE_BINARY_DIR}/fftw-3.3.10.tar.gz)
-if(NOT EXISTS ${FFTW3_FILE})
+if(NOT EXISTS "${FFTW3_FILE}")
     message(STATUS "Downloading FFTW3")
-    file(DOWNLOAD https://www.fftw.org/fftw-3.3.10.tar.gz ${FFTW3_FILE} STATUS DOWNLOAD_STATUS)
+    file(DOWNLOAD "https://www.fftw.org/fftw-3.3.10.tar.gz" "${FFTW3_FILE}" STATUS DOWNLOAD_STATUS)
+    list(GET DOWNLOAD_STATUS 0 STATUS_CODE)
+    if(NOT STATUS_CODE EQUAL 0)
+        message(FATAL_ERROR "FFTW3 download failed: ${DOWNLOAD_STATUS}")
+    endif()
+    file(ARCHIVE_EXTRACT INPUT "${FFTW3_FILE}" DESTINATION "${CMAKE_BINARY_DIR}")
 endif()
 
-file(ARCHIVE_EXTRACT INPUT ${CMAKE_BINARY_DIR}/fftw-3.3.10.tar.gz DESTINATION ${CMAKE_BINARY_DIR}/)
-
 add_subdirectory(${CMAKE_BINARY_DIR}/fftw-3.3.10 ${CMAKE_BINARY_DIR}/fftw-3.3.10-build EXCLUDE_FROM_ALL)
-
 get_property(
     all_targets
     DIRECTORY ${CMAKE_BINARY_DIR}/fftw-3.3.10
@@ -155,6 +157,15 @@ pd_add_external(x.rain~ "${CMAKE_CURRENT_SOURCE_DIR}/src/others/x.rain~.cpp")
 pd_add_external(x.rperlin "${CMAKE_CURRENT_SOURCE_DIR}/src/others/x.rperlin.cpp")
 
 set_target_properties(x.rperlin PROPERTIES CXX_STANDARD 17 CXX_STANDARD_REQUIRED ON)
+
+# ╭──────────────────────────────────────╮
+# │              OpenScofo               │
+# ╰──────────────────────────────────────╯
+cpmaddpackage("gh:charlesneimog/OpenScofo#main")
+
+pd_add_external(x.onset.cut~ "${CMAKE_CURRENT_SOURCE_DIR}/src/utilities/x.onset.cut~.cpp" LINK_LIBRARIES OpenScofo)
+
+target_compile_features(x.onset.cut_tilde PRIVATE cxx_std_20)
 
 # ╭──────────────────────────────────────╮
 # │                 stk                  │
