@@ -70,11 +70,11 @@ extern "C" void xlab_setup() {
     int micro;
 
     sys_getversion(&major, &minor, &micro);
-    const bool pd_is_too_old = major < 0 || (major == 0 && minor < 56);
+    const bool pd_is_too_old = major < 0 || (major == 0 && minor < 57);
     if (pd_is_too_old) {
         pd_error(nullptr,
                  "[xlab] Pd %d.%d.%d is too old; "
-                 "Pd 0.56 or newer is required",
+                 "Pd 0.57 or newer is required",
                  major, minor, micro);
         return;
     }
@@ -96,5 +96,5 @@ extern "C" void xlab_setup() {
     xlab_load_dependency(canvas, "lua");
     xlab_load_dependency(canvas, "py4pd");
 
-    post("[pd-xlab] version %d.%d.%d built on %s %s", 0, 1, 3, __DATE__, __TIME__);
+    post("[pd-xlab] version %d.%d.%d built on %s %s", 0, 1, 6, __DATE__, __TIME__);
 }

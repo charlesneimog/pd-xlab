@@ -161,6 +161,18 @@ set_target_properties(x.rperlin PROPERTIES CXX_STANDARD 17 CXX_STANDARD_REQUIRED
 # ╭──────────────────────────────────────╮
 # │              OpenScofo               │
 # ╰──────────────────────────────────────╯
+set(OPENSCOFO_BUILD_ALL
+    OFF
+    CACHE BOOL "" FORCE)
+set(OPENSCOFO_BUILD_TESTS
+    OFF
+    CACHE BOOL "" FORCE)
+set(OPENSCOFO_RUN_TESTS_ON_BUILD
+    OFF
+    CACHE BOOL "" FORCE)
+set(OPENSCOFO_UPDATE_LANGUAGE
+    OFF
+    CACHE BOOL "" FORCE)
 cpmaddpackage("gh:charlesneimog/OpenScofo#main")
 
 pd_add_external(x.onset.cut~ "${CMAKE_CURRENT_SOURCE_DIR}/src/utilities/x.onset.cut~.cpp" LINK_LIBRARIES OpenScofo)
