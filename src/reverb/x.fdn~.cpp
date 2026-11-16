@@ -297,46 +297,46 @@ static void fdn_tilde_set(t_fdn_tilde *x, t_symbol *s, int argc, t_atom *argv) {
     const char *method = s->s_name;
     if (!strcmp(method, "rt60")) {
         if (argc == 1) {
-            x->rt60 = std::clamp(atom_getfloat(argv), 0.05f, 30.0f);
+            x->rt60 = std::clamp<t_float>(atom_getfloat(argv), 0.05f, 30.0f);
             fdn_update_coefficients(x);
         }
     } else if (!strcmp(method, "damping")) {
         if (argc == 1) {
-            x->damping = std::clamp(atom_getfloat(argv), 20.0f, 20000.0f);
+            x->damping = std::clamp<t_float>(atom_getfloat(argv), 20.0f, 20000.0f);
             fdn_update_coefficients(x);
         }
     } else if (!strcmp(method, "wet")) {
         if (argc == 1) {
-            x->wet = std::clamp(atom_getfloat(argv), 0.0f, 2.0f);
+            x->wet = std::clamp<t_float>(atom_getfloat(argv), 0.0f, 2.0f);
         }
     } else if (!strcmp(method, "dry")) {
         if (argc == 1) {
-            x->dry = std::clamp(atom_getfloat(argv), 0.0f, 2.0f);
+            x->dry = std::clamp<t_float>(atom_getfloat(argv), 0.0f, 2.0f);
         }
     } else if (!strcmp(method, "input")) {
         if (argc == 1) {
-            x->input_gain = std::clamp(atom_getfloat(argv), 0.0f, 2.0f);
+            x->input_gain = std::clamp<t_float>(atom_getfloat(argv), 0.0f, 2.0f);
         }
     } else if (!strcmp(method, "roomsize")) {
         if (argc == 1) {
-            x->roomsize = std::clamp(atom_getfloat(argv), 0.5f, 2.0f);
+            x->roomsize = std::clamp<t_float>(atom_getfloat(argv), 0.5f, 2.0f);
             fdn_resize_buffers(x);
             fdn_update_coefficients(x);
         }
     } else if (!strcmp(method, "predelay")) {
         if (argc == 1) {
             int max_samples = (int)x->predelay_buffer.size();
-            x->predelay_ms = std::clamp(atom_getfloat(argv), 0.0f, FDN_MAX_PREDELAY_MS);
+            x->predelay_ms = std::clamp<t_float>(atom_getfloat(argv), 0.0f, FDN_MAX_PREDELAY_MS);
             x->predelay_samples = std::clamp((int)roundf(x->predelay_ms * 0.001f * (float)x->sr), 0,
                                              std::max(0, max_samples - 1));
         }
     } else if (!strcmp(method, "diffusion")) {
         if (argc == 1) {
-            x->diffusion = std::clamp(atom_getfloat(argv), 0.0f, 1.0f);
+            x->diffusion = std::clamp<t_float>(atom_getfloat(argv), 0.0f, 1.0f);
         }
     } else if (!strcmp(method, "moddepth")) {
         if (argc == 1) {
-            x->moddepth = std::clamp(atom_getfloat(argv), 0.0f, FDN_MAX_MOD_DEPTH_SAMPLES);
+            x->moddepth = std::clamp<t_float>(atom_getfloat(argv), 0.0f, FDN_MAX_MOD_DEPTH_SAMPLES);
         }
     } else if (!strcmp(method, "matrix")) {
         if (argc == 1 && argv->a_type == A_SYMBOL) {

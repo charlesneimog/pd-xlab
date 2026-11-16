@@ -732,7 +732,7 @@ static t_int *tsf_tilde_perform(t_int *w) {
 
     {
         std::lock_guard<std::mutex> lock(*x->mutex);
-        tsf_render_float(x->soundfont, out, n, 0);
+        tsf_render_float(x->soundfont, (float *)out, n, 0);
     }
     return w + 4;
 }
