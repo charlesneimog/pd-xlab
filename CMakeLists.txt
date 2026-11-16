@@ -175,6 +175,13 @@ set(OPENSCOFO_UPDATE_LANGUAGE
     CACHE BOOL "" FORCE)
 cpmaddpackage("gh:charlesneimog/OpenScofo#main")
 
+# OpenScofo's public class layout and destructor depend on this definition, but
+# the dependency currently adds it only while compiling its own source tree.
+# Propagate it to consumers to keep their view of OpenScofo ABI-compatible.
+if(OPENSCOFO_BUILD_WITH_LUA)
+    target_compile_definitions(OpenScofo PUBLIC OPENSCOFO_LUA)
+endif()
+
 pd_add_external(x.onset.cut~ "${CMAKE_CURRENT_SOURCE_DIR}/src/utilities/x.onset.cut~.cpp" LINK_LIBRARIES OpenScofo)
 
 target_compile_features(x.onset.cut_tilde PRIVATE cxx_std_20)

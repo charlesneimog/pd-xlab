@@ -36,11 +36,6 @@ static void xlab_add_paths(t_canvas *canvas) {
 }
 
 // ─────────────────────────────────────
-static void xlab_version(xlab *) {
-    post("[pd-xlab] version %d.%d.%d built on %s %s", 0, 1, 0, __DATE__, __TIME__);
-}
-
-// ─────────────────────────────────────
 static void *xlab_new() {
     auto *x = reinterpret_cast<xlab *>(pd_new(xlab_class));
     t_canvas *canvas = canvas_getcurrent();
@@ -81,8 +76,6 @@ extern "C" void xlab_setup() {
 
     xlab_class = class_new(gensym("xlab"), reinterpret_cast<t_newmethod>(xlab_new), nullptr,
                            sizeof(xlab), CLASS_DEFAULT, A_NULL);
-    class_addmethod(xlab_class, reinterpret_cast<t_method>(xlab_version), gensym("version"),
-                    A_NULL);
 
     const char *external_dir = class_gethelpdir(xlab_class);
     if (!external_dir || !external_dir[0]) {
@@ -96,5 +89,5 @@ extern "C" void xlab_setup() {
     xlab_load_dependency(canvas, "lua");
     xlab_load_dependency(canvas, "py4pd");
 
-    post("[pd-xlab] version %d.%d.%d built on %s %s", 0, 1, 6, __DATE__, __TIME__);
+    post("[xlab] version %d.%d.%d built on %s %s", 0, 1, 5, __DATE__, __TIME__);
 }

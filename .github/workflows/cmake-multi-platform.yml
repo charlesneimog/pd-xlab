@@ -22,11 +22,6 @@ jobs:
             - uses: actions/setup-python@v5
               with:
                   python-version: ${{env.PYVERSION}}
-            - uses: actions/setup-node@v4
-              with:
-                  node-version: 22
-            - name: Install Tree-sitter CLI
-              run: npm install -g tree-sitter-cli
             - uses: actions/checkout@v4
               with:
                   submodules: recursive
@@ -56,11 +51,6 @@ jobs:
             - uses: actions/setup-python@v5
               with:
                   python-version: ${{ env.PYVERSION }}
-            - uses: actions/setup-node@v4
-              with:
-                  node-version: 22
-            - name: Install Tree-sitter CLI
-              run: npm install -g tree-sitter-cli
             - uses: actions/checkout@v4
               with:
                   submodules: recursive
@@ -119,11 +109,6 @@ jobs:
             - uses: actions/setup-python@v5
               with:
                   python-version: ${{ env.PYVERSION }}
-            - uses: actions/setup-node@v4
-              with:
-                  node-version: 22
-            - name: Install Tree-sitter CLI
-              run: npm install -g tree-sitter-cli
             - name: Checkout repository
               uses: actions/checkout@v4
               with:
