@@ -175,9 +175,8 @@ set(OPENSCOFO_UPDATE_LANGUAGE
     CACHE BOOL "" FORCE)
 cpmaddpackage("gh:charlesneimog/OpenScofo#main")
 
-# OpenScofo's public class layout and destructor depend on this definition, but
-# the dependency currently adds it only while compiling its own source tree.
-# Propagate it to consumers to keep their view of OpenScofo ABI-compatible.
+# OpenScofo's public class layout and destructor depend on this definition, but the dependency currently adds it only
+# while compiling its own source tree. Propagate it to consumers to keep their view of OpenScofo ABI-compatible.
 if(OPENSCOFO_BUILD_WITH_LUA)
     target_compile_definitions(OpenScofo PUBLIC OPENSCOFO_LUA)
 endif()
@@ -273,6 +272,7 @@ endif()
 # include_directories(${CMAKE_BINARY_DIR}/)
 pd_add_external(x.grainer~ "${CMAKE_CURRENT_SOURCE_DIR}/src/granulador/x.grainer~.c")
 pd_add_external(x.click~ "${CMAKE_CURRENT_SOURCE_DIR}/src/utilities/x.click~.cpp")
+pd_add_external(x.autofit "${CMAKE_CURRENT_SOURCE_DIR}/src/utilities/x.autofit.c")
 pd_add_external(x.curve~ "${CMAKE_CURRENT_SOURCE_DIR}/src/utilities/x.curve~.cpp")
 pd_add_external(x.denoise~ "${CMAKE_CURRENT_SOURCE_DIR}/src/utilities/x.denoise~.cpp")
 set_target_properties(
@@ -376,27 +376,13 @@ endif()
 # ╭──────────────────────────────────────╮
 # │ Lua, Python Objects + Audio and Data │
 # ╰──────────────────────────────────────╯
-file(GLOB LUA_OBJECTS CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/src/lua/*.pd_lua"
-     "${CMAKE_CURRENT_SOURCE_DIR}/src/granulador/*.pd_lua")
+file(GLOB_RECURSE LUA_OBJECTS CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/src/*.pd_lua")
+file(GLOB_RECURSE LUA_DEPENDENCIES CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/src/*.lua")
+file(GLOB_RECURSE HELP_OBJECTS CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/src/*.pd")
+
 pd_add_datafile(xlab "${LUA_OBJECTS}")
-file(GLOB_RECURSE XLAB_HELP_FILES CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/src/x.*-help.pd"
-     "${CMAKE_CURRENT_SOURCE_DIR}/src/stolen/*-help.pd" "${CMAKE_CURRENT_SOURCE_DIR}/resources/x.*-help.pd")
-pd_add_datafile(xlab "${XLAB_HELP_FILES}")
-pd_add_datafile(xlab "${CMAKE_CURRENT_SOURCE_DIR}/src/sieves/sieve.lua")
-pd_add_datafile(xlab "${CMAKE_CURRENT_SOURCE_DIR}/src/microtonal/om_ji.lua")
-
-file(GLOB PYTHON_OBJECTS CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/src/python/*.pd_py"
-     "${CMAKE_CURRENT_SOURCE_DIR}/resources/ai/*.pd_py")
-pd_add_datafile(xlab "${PYTHON_OBJECTS}")
-
-file(GLOB AUDIO_FILES "${CMAKE_CURRENT_SOURCE_DIR}/resources/audios/*.wav")
-pd_add_datafile(xlab "${AUDIO_FILES}")
-
-file(GLOB ABS_FILES CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/resources/abs/*.pd"
-     "${CMAKE_CURRENT_SOURCE_DIR}/resources/x.cphasevoc~.pd"
-     "${CMAKE_CURRENT_SOURCE_DIR}/src/granulador/x.granulator.pd")
-pd_add_datafile(xlab "${ABS_FILES}")
-pd_add_datafile(xlab "${DDDD_LUA}")
+pd_add_datafile(xlab "${LUA_DEPENDENCIESJk}")
+pd_add_datafile(xlab "${HELP_OBJECTS}")
 
 # ╭──────────────────────────────────────╮
 # │             xlab library             │

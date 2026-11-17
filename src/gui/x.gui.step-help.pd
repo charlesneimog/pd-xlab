@@ -1,0 +1,10 @@
+#N canvas 0 0 466 568 10;
+#X declare -lib xlab;
+#X obj 4 5 declare -lib xlab;
+#X obj 392 186 x.gui.step 1;
+#X obj 382 228 x.gui.step 3;
+#X obj 82 85 x.gui.step 3;
+#X obj 120 236 x.gui.step 4;
+#X obj 192 87 x.gui.step 20;
+#X obj 254 145 x.gui.step 4;
+#X coords 0 568 1 567 620 220 0;
