@@ -346,7 +346,7 @@ else()
     # Temporary package fallbacks until these sources are moved into pd-xlab.
     cpmaddpackage("gh:charlesneimog/pd-orchidea#main")
     cpmaddpackage("gh:charlesneimog/pd-upic#main")
-    cpmaddpackage("gh:EL-LOCUS-SOLUS/pd-bhack#right")
+    cpmaddpackage("gh:EL-LOCUS-SOLUS/pd-bhack#main")
 
     # Packages intentionally kept outside pd-xlab.
     if(NOT EMSCRIPTEN)
