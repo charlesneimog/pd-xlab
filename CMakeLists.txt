@@ -173,17 +173,6 @@ set(OPENSCOFO_RUN_TESTS_ON_BUILD
 set(OPENSCOFO_UPDATE_LANGUAGE
     OFF
     CACHE BOOL "" FORCE)
-cpmaddpackage("gh:charlesneimog/OpenScofo#main")
-
-# OpenScofo's public class layout and destructor depend on this definition, but the dependency currently adds it only
-# while compiling its own source tree. Propagate it to consumers to keep their view of OpenScofo ABI-compatible.
-if(OPENSCOFO_BUILD_WITH_LUA)
-    target_compile_definitions(OpenScofo PUBLIC OPENSCOFO_LUA)
-endif()
-
-pd_add_external(x.onset.cut~ "${CMAKE_CURRENT_SOURCE_DIR}/src/utilities/x.onset.cut~.cpp" LINK_LIBRARIES OpenScofo)
-
-target_compile_features(x.onset.cut_tilde PRIVATE cxx_std_20)
 
 # ╭──────────────────────────────────────╮
 # │                 stk                  │
@@ -257,6 +246,7 @@ set_target_properties(
 target_include_directories(loris PRIVATE ${CMAKE_BINARY_DIR}/fftw-3.3.10/api)
 
 # freeze
+pd_add_external(x.gizmo~ "${CMAKE_CURRENT_SOURCE_DIR}/src/fft/x.gizmo~.c")
 pd_add_external(x.lfreeze~ "${CMAKE_CURRENT_SOURCE_DIR}/src/fft/x.lfreeze~.cpp" LINK_LIBRARIES loris)
 # Loris exposes std::auto_ptr in its Analyzer header (removed in C++17).
 set_target_properties(
@@ -302,6 +292,7 @@ endif()
 add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/src/single/x.pv~" "${CMAKE_BINARY_DIR}/single/pv")
 add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/src/single/x.mar~" "${CMAKE_BINARY_DIR}/single/mar")
 add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/src/single/x.dragonfly~" "${CMAKE_BINARY_DIR}/single/dragonfly")
+add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/src/single/x.muse~" "${CMAKE_BINARY_DIR}/single/muse")
 
 # Collections maintained as part of xlab.
 if(NOT APPLE)
