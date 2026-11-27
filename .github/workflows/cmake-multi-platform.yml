@@ -121,10 +121,28 @@ jobs:
                   msystem: mingw64
                   install: make mingw-w64-x86_64-gcc mingw64/mingw-w64-x86_64-cmake mingw-w64-x86_64-gcc-fortran mingw-w64-x86_64-boost
                   update: false
-            - name: Install PureData Float 32
+            - name: Download Pure Data Float 32
               if: matrix.precision == '32'
+              shell: pwsh
               run: |
-                  winget install -e --id MillerPuckette.PureData --accept-source-agreements
+                  $pdName = 'pd-0.57-0'
+                  $archive = Join-Path $env:RUNNER_TEMP "$pdName.msw.zip"
+                  $download = "msp.ucsd.edu/Software/$pdName.msw.zip"
+                  try {
+                      Invoke-WebRequest -Uri "https://$download" -OutFile $archive -TimeoutSec 60
+                  } catch {
+                      # Windows can reject the publisher's TLS chain. Check the pinned digest for either download.
+                      Write-Warning 'Pure Data HTTPS download failed. Trying HTTP with SHA-256 verification.'
+                      Invoke-WebRequest -Uri "http://$download" -OutFile $archive -TimeoutSec 60
+                  }
+
+                  $expectedHash = '1C128583E9BB78C42C88AF72E02951D3808AF6598A0A68ABF0EDA61E8D2BC4A3'
+                  if ((Get-FileHash -LiteralPath $archive -Algorithm SHA256).Hash -ne $expectedHash) {
+                      throw 'Pure Data ZIP SHA-256 mismatch.'
+                  }
+                  Expand-Archive -LiteralPath $archive -DestinationPath $env:RUNNER_TEMP -Force
+                  $pdRoot = Join-Path $env:RUNNER_TEMP $pdName
+                  "PD_ROOT=$pdRoot" >> $env:GITHUB_ENV
             - name: Install PureData Float 64
               if: matrix.precision == '64'
               run: |
@@ -134,7 +152,18 @@ jobs:
               if: matrix.compiler == 'mingw'
               run: |
                   PD_OUT="$(cygpath -u "$GITHUB_WORKSPACE"/xlab)"
-                  cmake . -B build -DPD_FLOATSIZE=${{ matrix.precision }} -DPD_OUTPUT_PATH="$PD_OUT" -DCMAKE_BUILD_TYPE=Release -DPYVERSION=${{ env.PYVERSION }} -DTARGET=CORE2
+                  pd_paths=()
+                  if [[ -n "${PD_ROOT:-}" ]]; then
+                      pd_root="$(cygpath -m "$PD_ROOT")"
+                      pd_paths=(-DPD_SOURCES_PATH="$pd_root/src" -DPDBINDIR="$pd_root/bin")
+                  fi
+                  cmake . -B build \
+                    -DPD_FLOATSIZE=${{ matrix.precision }} \
+                    -DPD_OUTPUT_PATH="$PD_OUT" \
+                    -DCMAKE_BUILD_TYPE=Release \
+                    -DPYVERSION=${{ env.PYVERSION }} \
+                    -DTARGET=CORE2 \
+                    "${pd_paths[@]}"
                   cmake --build build --parallel
                   #cmake --install build
             - name: Upload

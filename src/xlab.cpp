@@ -90,5 +90,5 @@ extern "C" void xlab_setup() {
     xlab_load_dependency(canvas, "py4pd");
     xlab_load_dependency(canvas, "x.autofit");
 
-    post("[xlab] version %d.%d.%d built on %s %s", 0, 1, 6, __DATE__, __TIME__);
+    post("[xlab] version %d.%d.%d built on %s %s", 0, 1, 7, __DATE__, __TIME__);
 }

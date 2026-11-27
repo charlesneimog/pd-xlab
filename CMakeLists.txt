@@ -292,7 +292,10 @@ endif()
 add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/src/single/x.pv~" "${CMAKE_BINARY_DIR}/single/pv")
 add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/src/single/x.mar~" "${CMAKE_BINARY_DIR}/single/mar")
 add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/src/single/x.dragonfly~" "${CMAKE_BINARY_DIR}/single/dragonfly")
-add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/src/single/x.muse~" "${CMAKE_BINARY_DIR}/single/muse")
+
+if(LINUX)
+    add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/src/single/x.muse~" "${CMAKE_BINARY_DIR}/single/muse")
+endif()
 
 # Collections maintained as part of xlab.
 if(NOT APPLE)
